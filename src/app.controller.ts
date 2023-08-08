@@ -1,6 +1,14 @@
-import { Controller, Get, Logger } from '@nestjs/common'
+import {
+  Body,
+  Headers,
+  Controller,
+  Logger,
+  Post,
+  UseGuards,
+} from '@nestjs/common'
 import { AppService } from './app.service'
 import { ConfigService } from '@nestjs/config'
+import { ZohoGuard } from './auth/zoho.guard'
 
 @Controller()
 export class AppController {
@@ -11,13 +19,18 @@ export class AppController {
     private configService: ConfigService,
   ) {}
 
-  @Get()
-  async webhookZohoAppointmentScheduled(): Promise<string> {
-    // TODO:
-    // 1. Capture webhook data.
-    // 2. Create project in Arcsite
-    this.appService.doSomethingWithZohoWebhookData()
+  @UseGuards(ZohoGuard)
+  @Post()
+  async webhookZohoAppointmentScheduled(
+    @Headers() headers: Headers,
+    @Body() body: ZohoLeadPayload,
+  ) {
+    // TODO: REMOVE when deploying to prod
+    if (body.customer.name !== 'Ron Test Testing') {
+      console.log('SKIPPING ZOHO WEBHOOK')
+      return
+    }
 
-    return this.configService.get<string>('RON')
+    await this.appService.createArcSiteProject(body)
   }
 }
