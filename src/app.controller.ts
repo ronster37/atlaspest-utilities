@@ -3,6 +3,7 @@ import { AppService } from './app.service'
 import { ZohoGuard } from './auth/zoho.guard'
 import { PestRoutesService } from './pestRoute.service'
 import { PrismaService } from './prisma.service'
+import { SendGridService } from './sendgrid.service'
 
 @Controller()
 export class AppController {
@@ -10,8 +11,9 @@ export class AppController {
 
   constructor(
     private readonly appService: AppService,
+    private readonly prisma: PrismaService,
     private readonly pestRouteService: PestRoutesService,
-    private prisma: PrismaService,
+    private readonly sendGridService: SendGridService,
   ) {}
 
   @UseGuards(ZohoGuard)
@@ -53,6 +55,14 @@ export class AppController {
     // await this.pestRouteService.createDocument()
     // TODO: extra credit - extract the third page
     // await this.pestRouteService.createServiceDiagramDocument()
+    await this.sendGridService.send({
+      to: 'office@atlastpest.com',
+      from: 'no-reply@atlaspest.com',
+      // TODO: use the customer's name
+      subject: `New signed contract for ${'fullname'}`,
+      // TODO: use the customer's name and ID
+      text: `New signed contract for ${'fullname'}.\n\nCustomer ID: ${'customer_id'}\n\nPlease set up subscription.`,
+    })
   }
 
   @Get()
