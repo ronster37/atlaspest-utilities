@@ -21,3 +21,13 @@ model CommercialSales {
 
   @@map("commercial_sales")
 }
+
+model GlobalSettings {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  key       String   @unique
+  value     String
+
+  @@map("global_settings")
+}
