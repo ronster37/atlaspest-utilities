@@ -1,12 +1,18 @@
-import { Body, Controller, Logger, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Logger, Post, UseGuards } from '@nestjs/common'
 import { AppService } from './app.service'
 import { ZohoGuard } from './auth/zoho.guard'
+import { PestRoutesService } from './pestRoute.service'
+import { PrismaService } from './prisma.service'
 
 @Controller()
 export class AppController {
   private readonly logger = new Logger(AppController.name)
 
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly pestRouteService: PestRoutesService,
+    private prisma: PrismaService,
+  ) {}
 
   @UseGuards(ZohoGuard)
   @Post()
@@ -39,5 +45,18 @@ export class AppController {
       lead.Email,
     )
     await this.appService.sendForSignature(requestDocument.request_id)
+  }
+
+  @Post('zoho-document-signed')
+  async webhookZohoDocumentSigned(@Body() body: ZohoSignWebhookPayload) {
+    // await this.pestRouteService.createCustomer()
+    // await this.pestRouteService.createDocument()
+    // TODO: extra credit - extract the third page
+    // await this.pestRouteService.createServiceDiagramDocument()
+  }
+
+  @Get()
+  async test() {
+    return this.prisma.commercialSales.count()
   }
 }

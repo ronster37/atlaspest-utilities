@@ -56,3 +56,33 @@ interface ZohoRequest {
 interface ZohoDocumentFields {
   document_id: string
 }
+
+interface ZohoSignWebhookPayload {
+  requests: ZohoSignRequest
+  notifications: ZohoSignNotification
+}
+
+interface ZohoSignRequest {
+  request_status: string
+  document_ids: ZohoSignDocumentId[]
+  request_id: number
+  actions: ZohoSignAction[]
+}
+
+interface ZohoSignDocumentId {
+  document_id: string
+}
+
+interface ZohoSignAction {
+  recipient_email: string
+  recipient_name: string
+}
+
+interface ZohoSignNotification {
+  performed_by_email: string
+  reason: string
+  activity: string
+  operation_type: string
+  action_id: number
+  performed_by_name: string
+}

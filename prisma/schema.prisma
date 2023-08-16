@@ -1,0 +1,23 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model CommercialSales {
+  id                        Int      @id @default(autoincrement())
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+  zohoLeadId                String   @map("zoho_lead_id")
+  arcSiteProjectId          String   @map("arc_site_project_id")
+  zohoSignDocumentRequestId String   @map("zoho_sign_document_request_id")
+  pestRoutesCustomerId      String   @map("pest_routes_customer_id")
+
+  @@map("commercial_sales")
+}
