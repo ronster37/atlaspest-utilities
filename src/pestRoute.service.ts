@@ -6,14 +6,14 @@ import axios from 'axios'
 export class PestRoutesService {
   constructor(private configService: ConfigService) {}
 
-  createCustomer(firstName: string, lastName: string, email: string) {
+  createCustomer(zohoSignRequestId: string) {
     const url = `${this.configService.get('PESTROUTES_URL')}/customer/create`
     const requestData = {
-      fname: firstName,
-      lname: lastName,
+      // fname: firstName,
+      // lname: lastName,
     }
 
-    axios.post(url, requestData, this.getAuthorization())
+    return axios.post(url, requestData, this.getAuthorization())
   }
 
   createDocument(filePath: string, customerId: string) {

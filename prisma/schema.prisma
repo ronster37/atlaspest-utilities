@@ -10,14 +10,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// TODO: ask ryan about the uniqueness of the fields based on the biz logic
 model CommercialSales {
-  id                        Int      @id @default(autoincrement())
-  createdAt                 DateTime @default(now()) @map("created_at")
-  updatedAt                 DateTime @updatedAt @map("updated_at")
-  zohoLeadId                String   @map("zoho_lead_id")
-  arcSiteProjectId          String   @map("arc_site_project_id")
-  zohoSignDocumentRequestId String   @map("zoho_sign_document_request_id")
-  pestRoutesCustomerId      String   @map("pest_routes_customer_id")
+  id                   Int      @id @default(autoincrement())
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  zohoLeadId           String   @map("zoho_lead_id")
+  arcSiteProjectId     String   @unique @map("arc_site_project_id")
+  zohoSignRequestId    String   @unique @map("zoho_sign_document_request_id")
+  pestRoutesCustomerId Int      @unique @map("pest_routes_customer_id")
 
   @@map("commercial_sales")
 }
