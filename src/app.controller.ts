@@ -69,4 +69,9 @@ export class AppController {
   async test() {
     return this.prisma.commercialSales.count()
   }
+
+  @Get('hello')
+  async hello() {
+    return 'hello world'
+  }
 }
