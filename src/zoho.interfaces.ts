@@ -30,6 +30,7 @@ interface ZohoLeadResponse {
 }
 
 interface ZohoLead {
+  id: string
   Email: string
   Full_Name: string
   Phone: string

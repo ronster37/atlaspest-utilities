@@ -3,6 +3,7 @@ import { AppService } from './app.service'
 import { ZohoGuard } from './auth/zoho.guard'
 import { PestRoutesService } from './pestRoute.service'
 import { PrismaService } from './prisma.service'
+import { url } from 'inspector'
 
 @Controller()
 export class AppController {
@@ -28,18 +29,24 @@ export class AppController {
     })
   }
 
-  @Post()
+  @Post('arc-site/proposal-signed')
   async webhookArcSiteProposalSigned(
     @Body() body: ArcSiteProposalSignedPayload,
   ) {
     const project = await this.appService.getArcSiteProject(body.project_id)
     const lead = await this.appService.findZohoLead(project.job_number)
-    const filePath = await this.appService.downloadProposal(body.url)
 
     const requestDocument = await this.appService.createZohoDocument(
       lead.Full_Name,
-      filePath,
+      body.url,
     )
+
+    await this.prisma.commercialSales.update({
+      where: { zohoLeadId: lead.id, arcSiteProjectId: body.project_id },
+      data: {
+        zohoSignRequestId: requestDocument.request_id,
+      },
+    })
     await this.appService.addSignatureField(
       requestDocument.request_id,
       requestDocument.document_fields[0].document_id,

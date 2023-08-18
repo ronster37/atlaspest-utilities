@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import axios from 'axios'
-import fs from 'fs'
-import path from 'path'
+import * as FormData from 'form-data'
 
 @Injectable()
 export class AppService {
@@ -57,30 +56,22 @@ export class AppService {
   }
 
   async findZohoLead(id: string) {
+    const url = `${this.configService.get('ZOHO_URL')}/Leads/${id}`
+    console.log('url', url)
     const response = await axios.get<ZohoLeadResponse>(
-      `${this.configService.get('ZOHO_URL')}/Leads/${id})`,
+      url,
       this.getZohoAuthenticationHeaders(),
     )
 
     return response.data.data[0]
   }
 
-  async downloadProposal(url: string) {
-    const response = await axios.get(url, { responseType: 'arraybuffer' })
-    const pdfBuffer = Buffer.from(response.data, 'binary')
-
-    const tmpPath = path.join('/tmp', 'proposal.pdf')
-    fs.writeFileSync(tmpPath, pdfBuffer)
-    // TODO: print and catch error
-
-    return tmpPath
-  }
-
-  async createZohoDocument(fullname: string, filePath: string) {
+  async createZohoDocument(fullname: string, pdfUrl: string) {
     const url = `${this.configService.get('ZOHO_SIGN_URL')}/requests`
+
     const requestData = {
       requests: {
-        request_name: `${fullname}`,
+        request_name: `${fullname} 2`,
         notes: '',
         expiration_days: 5,
         email_reminders: true,
@@ -89,15 +80,17 @@ export class AppService {
     }
 
     const formData = new FormData()
-    formData.append('file', filePath)
+    const pdfResponse = await axios.get(pdfUrl, {
+      responseType: 'arraybuffer',
+    })
+
+    formData.append('file', pdfResponse.data, 'proposal.pdf')
     formData.append('data', JSON.stringify(requestData))
 
     const response = await axios.post<ZohoCreateDocumentResponse>(
       url,
       formData,
-      this.getZohoAuthenticationHeaders({
-        'Content-Type': 'multipart/form-data',
-      }),
+      this.getZohoAuthenticationHeaders(formData.getHeaders()),
     )
 
     // TODO: check if response is ok
