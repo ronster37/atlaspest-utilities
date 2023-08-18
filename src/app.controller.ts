@@ -3,7 +3,6 @@ import { AppService } from './app.service'
 import { ZohoGuard } from './auth/zoho.guard'
 import { PestRoutesService } from './pestRoute.service'
 import { PrismaService } from './prisma.service'
-import { SendGridService } from './sendgrid.service'
 
 @Controller()
 export class AppController {
@@ -13,7 +12,6 @@ export class AppController {
     private readonly appService: AppService,
     private readonly prisma: PrismaService,
     private readonly pestRouteService: PestRoutesService,
-    private readonly sendGridService: SendGridService,
   ) {}
 
   @UseGuards(ZohoGuard)
@@ -51,27 +49,27 @@ export class AppController {
 
   @Post('zoho-document-signed')
   async webhookZohoDocumentSigned(@Body() body: ZohoSignWebhookPayload) {
-    // await this.pestRouteService.createCustomer()
+    // const row = await this.prisma.commercialSales.findFirst({
+    //   where: { zohoSignDocumentRequestId: String(body.requests.request_id) },
+    // })
+    // await this.pestRouteService.createCustomer(String(body.requests.request_id))
     // await this.pestRouteService.createDocument()
     // TODO: extra credit - extract the third page
     // await this.pestRouteService.createServiceDiagramDocument()
-    await this.sendGridService.send({
-      to: 'office@atlastpest.com',
-      from: 'no-reply@atlaspest.com',
-      // TODO: use the customer's name
-      subject: `New signed contract for ${'fullname'}`,
-      // TODO: use the customer's name and ID
-      text: `New signed contract for ${'fullname'}.\n\nCustomer ID: ${'customer_id'}\n\nPlease set up subscription.`,
-    })
+    // await this.emailService.send({
+    //   to: 'r4castil@gmail.com',
+    //   from: 'ron@atlaspest.com',
+    //   // TODO: use the customer's name
+    //   // subject: `New signed contract for ${'fullname'}`,
+    //   subject: 'New signed contract',
+    //   // TODO: use the customer's name and ID
+    //   // text: `New signed contract for ${'fullname'}.\n\nCustomer ID: ${'customer_id'}\n\nPlease set up subscription.`,
+    //   text: 'New signed contract.\n\nPlease set up subscription.',
+    // })
   }
 
   @Get()
   async test() {
     return this.prisma.commercialSales.count()
-  }
-
-  @Get('hello')
-  async hello() {
-    return 'hello world'
   }
 }
