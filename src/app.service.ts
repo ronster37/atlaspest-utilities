@@ -11,10 +11,10 @@ export class AppService {
   async createArcSiteProject(body: ZohoLeadPayload) {
     const { leadId, customer, workSite, salesRep } = body
 
-    await axios.post(
+    const response = await axios.post<ArcSiteProject>(
       `${this.configService.get('ARCSITE_URL')}/projects`,
       {
-        name: `rontest - ${Date.now()}`,
+        name: `RonTest - ${Date.now()}`,
         owner: this.configService.get('ARCSITE_OWNER'),
         job_number: leadId,
         customer: {
@@ -39,6 +39,8 @@ export class AppService {
         },
       },
     )
+
+    return response.data
   }
 
   async getArcSiteProject(project_id: string) {

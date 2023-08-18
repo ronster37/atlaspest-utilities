@@ -15,15 +15,17 @@ export class AppController {
   ) {}
 
   @UseGuards(ZohoGuard)
-  @Post()
+  @Post('zoho/appointment-scheduled')
   async webhookZohoAppointmentScheduled(@Body() body: ZohoLeadPayload) {
-    // TODO: REMOVE when deploying to prod
-    if (body.customer.name !== 'Ron Test Testing') {
-      console.log('SKIPPING ZOHO WEBHOOK')
-      return
-    }
+    this.logger.log('webhookZohoAppointmentScheduled for ' + body.leadId)
 
-    await this.appService.createArcSiteProject(body)
+    const arcSiteProject = await this.appService.createArcSiteProject(body)
+    await this.prisma.commercialSales.create({
+      data: {
+        zohoLeadId: body.leadId,
+        arcSiteProjectId: arcSiteProject.id,
+      },
+    })
   }
 
   @Post()
