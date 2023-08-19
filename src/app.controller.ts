@@ -3,7 +3,6 @@ import { AppService } from './app.service'
 import { ZohoGuard } from './auth/zoho.guard'
 import { PestRoutesService } from './pestRoute.service'
 import { PrismaService } from './prisma.service'
-import { url } from 'inspector'
 
 @Controller()
 export class AppController {
@@ -41,6 +40,8 @@ export class AppController {
       body.url,
     )
 
+    // TODO: if a document already exists for this lead and project
+    // If so, then do not create a new document and print error
     await this.prisma.commercialSales.update({
       where: { zohoLeadId: lead.id, arcSiteProjectId: body.project_id },
       data: {
@@ -56,12 +57,25 @@ export class AppController {
     await this.appService.sendForSignature(requestDocument.request_id)
   }
 
-  @Post('zoho-document-signed')
+  @Post('zoho/document-signed')
   async webhookZohoDocumentSigned(@Body() body: ZohoSignWebhookPayload) {
-    // const row = await this.prisma.commercialSales.findFirst({
-    //   where: { zohoSignDocumentRequestId: String(body.requests.request_id) },
-    // })
-    // await this.pestRouteService.createCustomer(String(body.requests.request_id))
+    if (body.notifications.operation_type != 'RequestCompleted') {
+      this.logger.log(
+        'Invalid notification_type ' + body.notifications.operation_type,
+      )
+      return
+    }
+
+    const { zohoLeadId, arcSiteProjectId } =
+      await this.prisma.commercialSales.findFirst({
+        where: {
+          zohoSignRequestId: String(body.requests.request_id),
+        },
+      })
+    // TODO: Which info to user, the lead or the project?
+    const zohoLead = await this.appService.findZohoLead(zohoLeadId)
+
+    await this.pestRouteService.createCustomer(zohoLead)
     // await this.pestRouteService.createDocument()
     // TODO: extra credit - extract the third page
     // await this.pestRouteService.createServiceDiagramDocument()

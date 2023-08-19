@@ -6,14 +6,26 @@ import axios from 'axios'
 export class PestRoutesService {
   constructor(private configService: ConfigService) {}
 
-  createCustomer(zohoSignRequestId: string) {
+  async createCustomer(zohoLead: ZohoLead) {
     const url = `${this.configService.get('PESTROUTES_URL')}/customer/create`
     const requestData = {
-      // fname: firstName,
-      // lname: lastName,
+      fname: zohoLead.Fist_Name,
+      lname: zohoLead.Last_Name,
+      address: zohoLead.Street,
+      city: zohoLead.City,
+      state: zohoLead.State,
+      zip: zohoLead.Zip_Code,
+      phone1: zohoLead.Phone,
+      email: zohoLead.Email,
+      status: 1,
     }
+    const response = await axios.post<PestRoutesCustomerCreateResponse>(
+      url,
+      requestData,
+      this.getAuthorization(),
+    )
 
-    return axios.post(url, requestData, this.getAuthorization())
+    return response.data
   }
 
   createDocument(filePath: string, customerId: string) {
@@ -30,10 +42,8 @@ export class PestRoutesService {
   getAuthorization() {
     return {
       params: {
-        authenticationToken:
-          '1r93g9sr6e5vdg4a7fujbucttt858gqrfc7m58o6f8m2r313sio0t5op34biq5gl',
-        authenticationKey:
-          'ue35nr5522a193s9doiii3rpbakfqln2vqaimdvd8daidvcd1ej205lo90ruo63s',
+        authenticationToken: this.configService.get('PESTROUTES_AUTH_TOKEN'),
+        authenticationKey: this.configService.get('PESTROUTES_AUTH_KEY'),
       },
     }
   }
