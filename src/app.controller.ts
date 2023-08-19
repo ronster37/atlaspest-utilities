@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Logger, Post, UseGuards } from '@nestjs/common'
 import { AppService } from './app.service'
 import { ZohoGuard } from './auth/zoho.guard'
-import { PestRoutesService } from './pestRoute.service'
+import { PestRoutesService } from './pestRoutes.service'
 import { PrismaService } from './prisma.service'
 
 @Controller()
@@ -59,24 +59,39 @@ export class AppController {
 
   @Post('zoho/document-signed')
   async webhookZohoDocumentSigned(@Body() body: ZohoSignWebhookPayload) {
-    if (body.notifications.operation_type != 'RequestCompleted') {
-      this.logger.log(
-        'Invalid notification_type ' + body.notifications.operation_type,
-      )
+    const operationType = body.notifications.operation_type
+    const requestId = String(body.requests.request_id)
+
+    if (operationType != 'RequestCompleted') {
+      this.logger.log('Invalid notification_type ' + operationType)
       return
     }
 
+    console.log('requestId', requestId)
     const { zohoLeadId, arcSiteProjectId } =
       await this.prisma.commercialSales.findFirst({
         where: {
-          zohoSignRequestId: String(body.requests.request_id),
+          zohoSignRequestId: requestId,
         },
       })
     // TODO: Which info to user, the lead or the project?
     const zohoLead = await this.appService.findZohoLead(zohoLeadId)
 
-    await this.pestRouteService.createCustomer(zohoLead)
-    // await this.pestRouteService.createDocument()
+    const pestRouteCustomerCreateResponse =
+      await this.pestRouteService.createCustomer(zohoLead)
+
+    console.log('zohoLead', zohoLead)
+    console.log(
+      'pestRouteCustomerCreateResponse',
+      pestRouteCustomerCreateResponse,
+    )
+    const arrayBuffer = await this.appService.getZohoRequestPDFArrayBuffer(
+      requestId,
+    )
+    await this.pestRouteService.createDocument(
+      arrayBuffer,
+      pestRouteCustomerCreateResponse.result,
+    )
     // TODO: extra credit - extract the third page
     // await this.pestRouteService.createServiceDiagramDocument()
     // await this.emailService.send({

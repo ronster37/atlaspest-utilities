@@ -66,6 +66,18 @@ export class AppService {
     return response.data.data[0]
   }
 
+  async getZohoRequestPDFArrayBuffer(requestId: string) {
+    const url = `${this.configService.get(
+      'ZOHO_SIGN_URL',
+    )}/requests/${requestId}/pdf`
+    const response = await axios.get(url, {
+      ...this.getZohoAuthenticationHeaders(),
+      responseType: 'arraybuffer',
+    })
+
+    return response.data
+  }
+
   async createZohoDocument(fullname: string, pdfUrl: string) {
     const url = `${this.configService.get('ZOHO_SIGN_URL')}/requests`
 

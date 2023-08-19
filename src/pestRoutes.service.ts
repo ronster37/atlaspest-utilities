@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import axios from 'axios'
+import * as FormData from 'form-data'
 
 @Injectable()
 export class PestRoutesService {
@@ -28,15 +29,27 @@ export class PestRoutesService {
     return response.data
   }
 
-  createDocument(filePath: string, customerId: string) {
+  async createDocument(arrayBuffer: ArrayBuffer, customerId: string) {
     const url = `${this.configService.get('PESTROUTES_URL')}/document/create`
     const formData = new FormData()
-    formData.append('uploadFile', filePath)
+
+    formData.append('uploadFile', arrayBuffer, 'proposal.pdf')
     formData.append('customerID', customerId)
     // TODO: hardcoded description?
-    formData.append('description', 'Some descriptin')
+    formData.append(
+      'description',
+      'TODO: Some description goes here ' + Date.now(),
+    )
 
-    return axios.post(url, formData, this.getAuthorization())
+    console.log('headers', {
+      ...this.getAuthorization(),
+      ...formData.getHeaders(),
+    })
+
+    return await axios.post(url, formData, {
+      ...this.getAuthorization(),
+      ...formData.getHeaders(),
+    })
   }
 
   getAuthorization() {
