@@ -1,11 +1,61 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import axios from 'axios'
+import axios, { AxiosInstance } from 'axios'
 import * as FormData from 'form-data'
 
 @Injectable()
 export class AppService {
-  constructor(private configService: ConfigService) {}
+  zohoAxiosInstance: AxiosInstance
+
+  constructor(private configService: ConfigService) {
+    this.zohoAxiosInstance = axios.create()
+
+    this.zohoAxiosInstance.interceptors.request.use(
+      (config) => {
+        config.headers.Authorization = `Zoho-oauthtoken `
+        return config
+      },
+      (error) => Promise.reject(error),
+    )
+
+    this.zohoAxiosInstance.interceptors.response.use(
+      (response) => {
+        return response
+      },
+      async (error) => {
+        const originalRequest = error.config
+
+        if (error.response.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true
+          const access_token = await this.getAccessToken()
+          originalRequest.headers.Authorization = `Zoho-oauthtoken ${access_token}`
+
+          return axios(originalRequest)
+        }
+
+        return Promise.reject(error)
+      },
+    )
+  }
+
+  async getAccessToken() {
+    const url = 'https://accounts.zoho.com/oauth/v2/token'
+
+    const response = await axios.post<ZohoRefreshAccessTokenResponse>(
+      url,
+      {},
+      {
+        params: {
+          refresh_token: this.configService.get('ZOHO_REFRESH_TOKEN'),
+          client_id: this.configService.get('ZOHO_CLIENT_ID'),
+          client_secret: this.configService.get('ZOHO_CLIENT_SECRET'),
+          grant_type: 'refresh_token',
+        },
+      },
+    )
+
+    return response.data.access_token
+  }
 
   async createArcSiteProject(body: ZohoLeadPayload) {
     const { leadId, customer, workSite, salesRep } = body
@@ -57,11 +107,7 @@ export class AppService {
 
   async findZohoLead(id: string) {
     const url = `${this.configService.get('ZOHO_URL')}/Leads/${id}`
-    console.log('url', url)
-    const response = await axios.get<ZohoLeadResponse>(
-      url,
-      this.getZohoAuthenticationHeaders(),
-    )
+    const response = await this.zohoAxiosInstance.get<ZohoLeadResponse>(url)
 
     return response.data.data[0]
   }
@@ -70,8 +116,7 @@ export class AppService {
     const url = `${this.configService.get(
       'ZOHO_SIGN_URL',
     )}/requests/${requestId}/pdf`
-    const response = await axios.get(url, {
-      ...this.getZohoAuthenticationHeaders(),
+    const response = await this.zohoAxiosInstance.get(url, {
       responseType: 'arraybuffer',
     })
 
@@ -99,11 +144,16 @@ export class AppService {
     formData.append('file', pdfResponse.data, 'proposal.pdf')
     formData.append('data', JSON.stringify(requestData))
 
-    const response = await axios.post<ZohoCreateDocumentResponse>(
-      url,
-      formData,
-      this.getZohoAuthenticationHeaders(formData.getHeaders()),
-    )
+    const response =
+      await this.zohoAxiosInstance.post<ZohoCreateDocumentResponse>(
+        url,
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders(),
+          },
+        },
+      )
 
     // TODO: check if response is ok
     return response.data.requests
@@ -150,13 +200,11 @@ export class AppService {
     const formData = new FormData()
     formData.append('data', JSON.stringify(requestData))
 
-    return axios.put(
-      url,
-      formData,
-      this.getZohoAuthenticationHeaders({
-        'Content-Type': 'multipart/form-data',
-      }),
-    )
+    return this.zohoAxiosInstance.put(url, formData, {
+      headers: {
+        ...formData.getHeaders(),
+      },
+    })
   }
 
   sendForSignature(request_id: string) {
@@ -164,15 +212,6 @@ export class AppService {
       'ZOHO_SIGN_URL',
     )}/requests/${request_id}/submit`
 
-    return axios.post(url, null, this.getZohoAuthenticationHeaders())
-  }
-
-  getZohoAuthenticationHeaders(additionalHeaders: any = {}) {
-    return {
-      headers: {
-        Authorization: `Zoho-oauthtoken ${'TODO'}`,
-        ...additionalHeaders,
-      },
-    }
+    return this.zohoAxiosInstance.post(url, null)
   }
 }

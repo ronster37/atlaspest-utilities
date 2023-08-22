@@ -1,4 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+interface ZohoRefreshAccessTokenResponse {
+  access_token: string
+  expires_in: number
+}
+
 interface Customer {
   name: string
   phone: string

@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Logger, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Logger, Post, UseGuards } from '@nestjs/common'
 import { AppService } from './app.service'
 import { ZohoGuard } from './auth/zoho.guard'
 import { PestRoutesService } from './pestRoutes.service'
 import { PrismaService } from './prisma.service'
+import { EmailService } from './email.service'
 
 @Controller()
 export class AppController {
@@ -10,6 +11,7 @@ export class AppController {
 
   constructor(
     private readonly appService: AppService,
+    private readonly emailService: EmailService,
     private readonly prisma: PrismaService,
     private readonly pestRouteService: PestRoutesService,
   ) {}
@@ -67,8 +69,7 @@ export class AppController {
       return
     }
 
-    console.log('requestId', requestId)
-    const { zohoLeadId, arcSiteProjectId } =
+    const { id, zohoLeadId, arcSiteProjectId } =
       await this.prisma.commercialSales.findFirst({
         where: {
           zohoSignRequestId: requestId,
@@ -79,35 +80,32 @@ export class AppController {
 
     const pestRouteCustomerCreateResponse =
       await this.pestRouteService.createCustomer(zohoLead)
+    const customerId = pestRouteCustomerCreateResponse.result
 
-    console.log('zohoLead', zohoLead)
-    console.log(
-      'pestRouteCustomerCreateResponse',
-      pestRouteCustomerCreateResponse,
-    )
+    await this.prisma.commercialSales.update({
+      where: { id },
+      data: {
+        pestRoutesCustomerId: Number(customerId),
+      },
+    })
+
     const arrayBuffer = await this.appService.getZohoRequestPDFArrayBuffer(
       requestId,
     )
-    await this.pestRouteService.createDocument(
+    await this.pestRouteService.uploadProposal(
       arrayBuffer,
-      pestRouteCustomerCreateResponse.result,
+      customerId,
+      'Proposal',
     )
-    // TODO: extra credit - extract the third page
-    // await this.pestRouteService.createServiceDiagramDocument()
-    // await this.emailService.send({
-    //   to: 'r4castil@gmail.com',
-    //   from: 'ron@atlaspest.com',
-    //   // TODO: use the customer's name
-    //   // subject: `New signed contract for ${'fullname'}`,
-    //   subject: 'New signed contract',
-    //   // TODO: use the customer's name and ID
-    //   // text: `New signed contract for ${'fullname'}.\n\nCustomer ID: ${'customer_id'}\n\nPlease set up subscription.`,
-    //   text: 'New signed contract.\n\nPlease set up subscription.',
-    // })
-  }
+    await this.pestRouteService.uplodDiagram(arrayBuffer, customerId, 'Diagram')
 
-  @Get()
-  async test() {
-    return this.prisma.commercialSales.count()
+    await this.emailService.send({
+      to: 'r4castil@gmail.com',
+      from: 'ron@atlaspest.com',
+      // TODO: use the customer's name
+      subject: `New signed contract for ${'fullname'}`,
+      // TODO: use the customer's name and ID
+      text: `New signed contract for ${zohoLead.Full_Name}.\n\nPestRoutes Customer ID: ${customerId}\n\nPlease set up subscription.`,
+    })
   }
 }
