@@ -7,6 +7,8 @@ import { PestRoutesService } from './pestRoutes.service'
 import { PrismaService } from './prisma.service'
 import { ZohoService } from './zoho.service'
 import { EmailService } from './email.service'
+import { GlobalExceptionFilter } from './global-exception.filter'
+import { APP_FILTER } from '@nestjs/core'
 
 @Module({
   imports: [ConfigModule.forRoot(), AuthModule],
@@ -17,6 +19,10 @@ import { EmailService } from './email.service'
     PrismaService,
     ZohoService,
     EmailService,
+    {
+      provide: APP_FILTER,
+      useClass: GlobalExceptionFilter,
+    },
   ],
 })
 export class AppModule {}
