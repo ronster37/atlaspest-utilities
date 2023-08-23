@@ -19,6 +19,11 @@ export class EmailService {
   }
 
   async send(options: SendMailOptions) {
-    await this.transporter.sendMail(options)
+    await this.transporter.sendMail({
+      to: this.configService.get('EMAIL_NOTIFICATIONS_TO'),
+      from: this.configService.get('EMAIL_NOTIFICATIONS_FROM'),
+      subject: options.subject,
+      text: options.text,
+    })
   }
 }

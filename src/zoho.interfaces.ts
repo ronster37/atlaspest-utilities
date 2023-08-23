@@ -25,6 +25,7 @@ interface SalesRep {
 
 interface ZohoLeadPayload {
   leadId: string
+  company: string
   customer: Customer
   workSite: WorkSite
   salesRep: SalesRep

@@ -100,12 +100,10 @@ export class AppController {
     await this.pestRouteService.uplodDiagram(arrayBuffer, customerId, 'Diagram')
 
     await this.emailService.send({
-      to: 'r4castil@gmail.com',
-      from: 'ron@atlaspest.com',
       // TODO: use the customer's name
       subject: `New signed contract for ${'fullname'}`,
       // TODO: use the customer's name and ID
-      text: `New signed contract for ${zohoLead.Full_Name}.\n\nPestRoutes Customer ID: ${customerId}\n\nPlease set up subscription.`,
+      text: `New signed contract for ${zohoLead.Full_Name}.\n\nCustomer ID: ${customerId}\n\nPlease set up subscription.`,
     })
   }
 }
