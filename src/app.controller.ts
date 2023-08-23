@@ -101,7 +101,7 @@ export class AppController {
 
     await this.emailService.send({
       // TODO: use the customer's name
-      subject: `New signed contract for ${'fullname'}`,
+      subject: `New signed contract for ${zohoLead.Full_Name}`,
       // TODO: use the customer's name and ID
       text: `New signed contract for ${zohoLead.Full_Name}.\n\nCustomer ID: ${customerId}\n\nPlease set up subscription.`,
     })
