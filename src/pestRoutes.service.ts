@@ -37,14 +37,17 @@ export class PestRoutesService {
     arrayBuffer: ArrayBuffer,
     customerId: string,
     description: string,
+    showCustomer: boolean,
+    showTech: boolean,
   ) {
     const url = `${this.configService.get('PESTROUTES_URL')}/document/create`
     const formData = new FormData()
 
     formData.append('uploadFile', arrayBuffer, 'proposal.pdf')
     formData.append('customerID', customerId)
-    // TODO: hardcoded description?
     formData.append('description', description)
+    formData.append('showCustomer', showCustomer)
+    formData.append('showTech', showTech)
 
     return await axios.post(url, formData, {
       ...this.getAuthorization(),
@@ -61,7 +64,13 @@ export class PestRoutesService {
     const fileBuffer = await fs.promises.readFile(filePath)
 
     try {
-      await this.uploadProposal(fileBuffer, customerId, description)
+      await this.uploadProposal(
+        fileBuffer,
+        customerId,
+        description,
+        false,
+        true,
+      )
     } catch (e) {
       // TODO: print error
     }

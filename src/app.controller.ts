@@ -95,9 +95,15 @@ export class AppController {
     await this.pestRouteService.uploadProposal(
       arrayBuffer,
       customerId,
-      'Proposal',
+      'Signed Contract',
+      true,
+      false,
     )
-    await this.pestRouteService.uplodDiagram(arrayBuffer, customerId, 'Diagram')
+    await this.pestRouteService.uplodDiagram(
+      arrayBuffer,
+      customerId,
+      'Service Diagram',
+    )
 
     await this.emailService.send({
       // TODO: use the customer's name
