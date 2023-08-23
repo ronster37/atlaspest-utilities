@@ -130,9 +130,9 @@ export class AppService {
       requests: {
         request_name: `Atlas Pest Services Proposal for ${company}`,
         notes: '',
-        expiration_days: 5,
+        expiration_days: this.configService.get('ZOHO_SIGN_EXPIRATION_DAYS'),
         email_reminders: true,
-        reminder_period: 2,
+        reminder_period: this.configService.get('ZOHO_SIGN_REMINDER_PERIOD'),
       },
     }
 
