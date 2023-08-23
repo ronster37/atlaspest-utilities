@@ -96,8 +96,8 @@ export class AppController {
       arrayBuffer,
       customerId,
       'Signed Contract',
-      true,
-      false,
+      1,
+      0,
     )
     await this.pestRouteService.uplodDiagram(
       arrayBuffer,

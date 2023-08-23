@@ -37,8 +37,8 @@ export class PestRoutesService {
     arrayBuffer: ArrayBuffer,
     customerId: string,
     description: string,
-    showCustomer: boolean,
-    showTech: boolean,
+    showCustomer: 1 | 0,
+    showTech: 1 | 0,
   ) {
     const url = `${this.configService.get('PESTROUTES_URL')}/document/create`
     const formData = new FormData()
@@ -64,13 +64,7 @@ export class PestRoutesService {
     const fileBuffer = await fs.promises.readFile(filePath)
 
     try {
-      await this.uploadProposal(
-        fileBuffer,
-        customerId,
-        description,
-        false,
-        true,
-      )
+      await this.uploadProposal(fileBuffer, customerId, description, 0, 1)
     } catch (e) {
       // TODO: print error
     }
