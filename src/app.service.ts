@@ -123,12 +123,12 @@ export class AppService {
     return response.data
   }
 
-  async createZohoDocument(fullname: string, pdfUrl: string) {
+  async createZohoDocument(company: string, pdfUrl: string) {
     const url = `${this.configService.get('ZOHO_SIGN_URL')}/requests`
 
     const requestData = {
       requests: {
-        request_name: `${fullname} 2`,
+        request_name: `Atlas Pest Services Proposal for ${company}`,
         notes: '',
         expiration_days: 5,
         email_reminders: true,

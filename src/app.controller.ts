@@ -38,7 +38,7 @@ export class AppController {
     const lead = await this.appService.findZohoLead(project.job_number)
 
     const requestDocument = await this.appService.createZohoDocument(
-      lead.Full_Name,
+      lead.Company,
       body.url,
     )
 
