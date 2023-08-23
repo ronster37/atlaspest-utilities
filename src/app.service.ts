@@ -2,17 +2,23 @@ import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import axios, { AxiosInstance } from 'axios'
 import * as FormData from 'form-data'
+import { PrismaService } from './prisma.service'
 
 @Injectable()
 export class AppService {
-  zohoAxiosInstance: AxiosInstance
+  private zohoAxiosInstance: AxiosInstance
+  private readonly ZOHO_ACCESS_TOKEN_KEY = 'zoho_access_token'
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {
     this.zohoAxiosInstance = axios.create()
 
     this.zohoAxiosInstance.interceptors.request.use(
-      (config) => {
-        config.headers.Authorization = `Zoho-oauthtoken `
+      async (config) => {
+        const accessToken = await this.getAccessToken()
+        config.headers.Authorization = `Zoho-oauthtoken ${accessToken}`
         return config
       },
       (error) => Promise.reject(error),
@@ -27,7 +33,7 @@ export class AppService {
 
         if (error.response.status === 401 && !originalRequest._retry) {
           originalRequest._retry = true
-          const access_token = await this.getAccessToken()
+          const access_token = await this.refreshAccessToken()
           originalRequest.headers.Authorization = `Zoho-oauthtoken ${access_token}`
 
           return axios(originalRequest)
@@ -39,6 +45,16 @@ export class AppService {
   }
 
   async getAccessToken() {
+    const globalSetting = await this.prisma.globalSettings.findUnique({
+      where: {
+        key: this.ZOHO_ACCESS_TOKEN_KEY,
+      },
+    })
+
+    return globalSetting?.value
+  }
+
+  async refreshAccessToken() {
     const url = 'https://accounts.zoho.com/oauth/v2/token'
 
     const response = await axios.post<ZohoRefreshAccessTokenResponse>(
@@ -53,6 +69,19 @@ export class AppService {
         },
       },
     )
+
+    await this.prisma.globalSettings.upsert({
+      where: {
+        key: this.ZOHO_ACCESS_TOKEN_KEY,
+      },
+      update: {
+        value: response.data.access_token,
+      },
+      create: {
+        key: this.ZOHO_ACCESS_TOKEN_KEY,
+        value: response.data.access_token,
+      },
+    })
 
     return response.data.access_token
   }
