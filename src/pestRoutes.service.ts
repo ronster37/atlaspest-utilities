@@ -11,17 +11,17 @@ import * as os from 'os'
 export class PestRoutesService {
   constructor(private configService: ConfigService) {}
 
-  async createCustomer(zohoLead: ZohoLead) {
+  async createCustomer(arcSiteProject: ArcSiteProject) {
     const url = `${this.configService.get('PESTROUTES_URL')}/customer/create`
     const requestData = {
-      fname: zohoLead.Fist_Name,
-      lname: zohoLead.Last_Name,
-      address: zohoLead.Street,
-      city: zohoLead.City,
-      state: zohoLead.State,
-      zip: zohoLead.Zip_Code,
-      phone1: zohoLead.Phone,
-      email: zohoLead.Email,
+      fname: arcSiteProject.customer.name.split(' ')[0],
+      lname: arcSiteProject.customer.name.split(' ')[1],
+      address: arcSiteProject.customer.address.street,
+      city: arcSiteProject.customer.address.city,
+      state: arcSiteProject.customer.address.state,
+      zip: arcSiteProject.customer.address.zip_code,
+      phone1: arcSiteProject.customer.phone,
+      email: arcSiteProject.customer.email,
       status: 1,
     }
     const response = await axios.post<PestRoutesCustomerCreateResponse>(

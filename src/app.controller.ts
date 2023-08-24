@@ -70,17 +70,19 @@ export class AppController {
       return
     }
 
-    const { id, zohoLeadId, arcSiteProjectId } =
+    const { id, arcSiteProjectId } =
       await this.prisma.commercialSales.findFirst({
         where: {
           zohoSignRequestId: requestId,
         },
       })
-    // TODO: Which info to user, the lead or the project?
-    const zohoLead = await this.appService.findZohoLead(zohoLeadId)
+
+    const arcSiteProject = await this.appService.getArcSiteProject(
+      arcSiteProjectId,
+    )
 
     const pestRouteCustomerCreateResponse =
-      await this.pestRouteService.createCustomer(zohoLead)
+      await this.pestRouteService.createCustomer(arcSiteProject)
     const customerId = pestRouteCustomerCreateResponse.result
 
     await this.prisma.commercialSales.update({
@@ -108,9 +110,9 @@ export class AppController {
 
     await this.emailService.send({
       // TODO: use the customer's name
-      subject: `New signed contract for ${zohoLead.Full_Name}`,
+      subject: `New signed contract for ${arcSiteProject.customer.name}`,
       // TODO: use the customer's name and ID
-      text: `New signed contract for ${zohoLead.Full_Name}.\n\nCustomer ID: ${customerId}\n\nPlease set up subscription.`,
+      text: `New signed contract for ${arcSiteProject.customer.name}.\n\nCustomer ID: ${customerId}\n\nPlease set up subscription.`,
     })
   }
 }
