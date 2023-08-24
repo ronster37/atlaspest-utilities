@@ -34,18 +34,19 @@ export class AppController {
   async webhookArcSiteProposalSigned(
     @Body() body: ArcSiteProposalSignedPayload,
   ) {
-    const project = await this.appService.getArcSiteProject(body.project_id)
+    const { project_id, url } = body.data
+    const project = await this.appService.getArcSiteProject(project_id)
     const lead = await this.appService.findZohoLead(project.job_number)
 
     const requestDocument = await this.appService.createZohoDocument(
       lead.Company,
-      body.url,
+      url,
     )
 
     // TODO: if a document already exists for this lead and project
     // If so, then do not create a new document and print error
     await this.prisma.commercialSales.update({
-      where: { zohoLeadId: lead.id, arcSiteProjectId: body.project_id },
+      where: { zohoLeadId: lead.id, arcSiteProjectId: project_id },
       data: {
         zohoSignRequestId: requestDocument.request_id,
       },
