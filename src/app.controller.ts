@@ -34,6 +34,8 @@ export class AppController {
   async webhookArcSiteProposalSigned(
     @Body() body: ArcSiteProposalSignedPayload,
   ) {
+    console.log('body', body)
+
     const { project_id, url } = body.data
     const project = await this.appService.getArcSiteProject(project_id)
     const lead = await this.appService.findZohoLead(project.job_number)
