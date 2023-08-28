@@ -34,7 +34,7 @@ export class AppController {
   async webhookArcSiteProposalSigned(
     @Body() body: ArcSiteProposalSignedPayload,
   ) {
-    console.log('body', body)
+    this.logger.log('body', body)
 
     const { project_id, url } = body.data
     const project = await this.appService.getArcSiteProject(project_id)
@@ -119,7 +119,7 @@ export class AppController {
   }
 
   @Post('test')
-  async test(@Body() body: any) {
+  async test(@Body() body: ArcSiteProposalSignedPayload) {
     this.logger.log(JSON.stringify(body))
   }
 }
