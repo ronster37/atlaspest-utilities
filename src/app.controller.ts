@@ -117,4 +117,9 @@ export class AppController {
       text: `New signed contract for ${arcSiteProject.customer.name}.\n\nCustomer ID: ${customerId}\n\nPlease set up subscription.`,
     })
   }
+
+  @Post('test')
+  async test(@Body() body: any) {
+    this.logger.log(JSON.stringify(body))
+  }
 }
