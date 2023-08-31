@@ -46,9 +46,11 @@ export class AppController {
     })
 
     const lead = await this.appService.findZohoLead(zohoLeadId)
+    const project = await this.appService.getArcSiteProject(project_id)
 
     const requestDocument = await this.appService.createZohoDocument(
-      lead.Company,
+      lead,
+      project,
       url,
     )
 
@@ -67,6 +69,9 @@ export class AppController {
       lead.Email,
     )
     await this.appService.sendForSignature(requestDocument.request_id)
+    await this.appService.updateZohoLead(zohoLeadId, {
+      Lead_Status: 'Proposal Sent',
+    })
   }
 
   @Post('zoho/document-signed')

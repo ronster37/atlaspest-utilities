@@ -170,6 +170,13 @@ export class AppService {
     return response.data.data[0]
   }
 
+  updateZohoLead(id: string, data: any) {
+    const url = `${this.configService.get('ZOHO_URL')}/Leads/${id}`
+    return this.zohoAxiosInstance.put<ZohoLeadResponse>(url, {
+      data: [data],
+    })
+  }
+
   async getZohoRequestPDFArrayBuffer(requestId: string) {
     const url = `${this.configService.get(
       'ZOHO_SIGN_URL',
@@ -181,13 +188,26 @@ export class AppService {
     return response.data
   }
 
-  async createZohoDocument(company: string, pdfUrl: string) {
+  async createZohoDocument(
+    zohoLead: ZohoLead,
+    project: ArcSiteProject,
+    pdfUrl: string,
+  ) {
     const url = `${this.configService.get('ZOHO_SIGN_URL')}/requests`
+    const notes = `Hey ${zohoLead.Fist_Name}!
+
+It was great meeting with you today. Thank you again for your time and the opportunity to take care of any pest problems here.
+Our primary focus is to earn each of our customer's trust by providing the best quality service with a hassle-free and convenient experience. We are really looking forward to earning your business as well.
+Here is the quote for the services we discussed. If you have any questions as you look it over, please let me know.
+
+Thanks,
+${project.sale_rep.name}
+${project.sale_rep.phone}`
 
     const requestData = {
       requests: {
-        request_name: `Atlas Pest Services Proposal for ${company}`,
-        notes: '',
+        request_name: `Atlas Pest Services Proposal for ${zohoLead.Company}`,
+        notes,
         expiration_days: this.configService.get('ZOHO_SIGN_EXPIRATION_DAYS'),
         email_reminders: true,
         reminder_period: this.configService.get('ZOHO_SIGN_REMINDER_PERIOD'),
