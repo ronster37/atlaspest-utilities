@@ -21,7 +21,11 @@ export class PestRoutesService {
       state: arcSiteProject.work_site_address.state,
       zip: arcSiteProject.work_site_address.zip_code,
       phone1: arcSiteProject.customer.phone,
+      phone2: arcSiteProject.customer.second_phone,
       email: arcSiteProject.customer.email,
+      specialScheduling: arcSiteProject.customer.second_email
+        ? `Second Email: ${arcSiteProject.customer.second_email}`
+        : '',
       companyName: zohoLead.Company,
       // This sets the customer as a commercial property
       commercialAccount: 1,
