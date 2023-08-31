@@ -13,6 +13,7 @@ interface Customer {
 interface WorkSite {
   street: string
   city: string
+  state: string
   zip: string
 }
 

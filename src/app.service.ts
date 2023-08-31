@@ -98,10 +98,17 @@ export class AppService {
           name: customer.name,
           phone: customer.phone,
           email: customer.email,
+          address: {
+            street: workSite.street,
+            city: workSite.city,
+            state: workSite.state,
+            zip_code: workSite.zip,
+          },
         },
         work_site_address: {
           street: workSite.street,
           city: workSite.city,
+          state: workSite.state,
           zip_code: workSite.zip,
         },
         sale_rep: {
