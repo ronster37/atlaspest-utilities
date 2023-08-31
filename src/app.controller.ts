@@ -28,6 +28,7 @@ export class AppController {
         arcSiteProjectId: arcSiteProject.id,
       },
     })
+    await this.appService.updateArcSiteProject(arcSiteProject.id, body)
   }
 
   @Post('arc-site/proposal-signed')

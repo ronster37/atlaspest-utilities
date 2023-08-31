@@ -93,7 +93,7 @@ export class AppService {
       `${this.configService.get('ARCSITE_URL')}/projects`,
       {
         name: company,
-        owner: this.configService.get('ARCSITE_OWNER'),
+        owner: salesRep.email,
         customer: {
           name: customer.name,
           phone: customer.phone,
@@ -125,6 +125,29 @@ export class AppService {
     )
 
     return response.data
+  }
+
+  async updateArcSiteProject(project_id: string, body: ZohoLeadPayload) {
+    await axios.patch<ArcSiteProject>(
+      `${this.configService.get('ARCSITE_URL')}/projects/${project_id}`,
+      {
+        name: body.company,
+        operator: 'office@atlaspest.com',
+        customer: {
+          name: body.customer.name,
+        },
+        sales_rep: {
+          name: `${body.salesRep.firstName} ${body.salesRep.lastName}`,
+          email: body.salesRep.email,
+          phone: body.salesRep.phone,
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${this.configService.get('ARCSITE_AUTH')}`,
+        },
+      },
+    )
   }
 
   async getArcSiteProject(project_id: string) {
