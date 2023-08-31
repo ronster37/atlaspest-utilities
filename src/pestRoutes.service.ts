@@ -6,13 +6,19 @@ import * as FormData from 'form-data'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
+import * as pdf from 'pdf-parse'
 
 @Injectable()
 export class PestRoutesService {
   constructor(private configService: ConfigService) {}
 
-  async createCustomer(zohoLead: ZohoLead, arcSiteProject: ArcSiteProject) {
+  async createCustomer(
+    zohoLead: ZohoLead,
+    arcSiteProject: ArcSiteProject,
+    arrayBuffer: ArrayBuffer,
+  ) {
     const url = `${this.configService.get('PESTROUTES_URL')}/customer/create`
+    const isMultiUnit = await this.isMultiUnit(arrayBuffer)
     const requestData = {
       fname: zohoLead.Fist_Name,
       lname: zohoLead.Last_Name,
@@ -42,6 +48,19 @@ export class PestRoutesService {
     return response.data
   }
 
+  async isMultiUnit(arrayBuffer: any) {
+    const result = await pdf(arrayBuffer)
+
+    return (
+      result.text
+        .split('Multi-Unit Property')[1]
+        .substring(0, 5)
+        .toLowerCase()
+        .replace(/\s/g, '')
+        .indexOf('yes') > -1
+    )
+  }
+
   async uploadProposal(
     arrayBuffer: ArrayBuffer,
     customerId: string,
@@ -64,7 +83,7 @@ export class PestRoutesService {
     })
   }
 
-  async uplodDiagram(
+  async uploadDiagram(
     arrayBuffer: ArrayBuffer,
     customerId: string,
     description: string,

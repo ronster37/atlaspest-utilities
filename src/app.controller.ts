@@ -4,6 +4,7 @@ import { ZohoGuard } from './auth/zoho.guard'
 import { PestRoutesService } from './pestRoutes.service'
 import { PrismaService } from './prisma.service'
 import { EmailService } from './email.service'
+import * as pdf from 'pdf-parse'
 
 @Controller()
 export class AppController {
@@ -90,8 +91,15 @@ export class AppController {
       arcSiteProjectId,
     )
 
+    const arrayBuffer = await this.appService.getZohoRequestPDFArrayBuffer(
+      requestId,
+    )
     const pestRouteCustomerCreateResponse =
-      await this.pestRouteService.createCustomer(zohoLead, arcSiteProject)
+      await this.pestRouteService.createCustomer(
+        zohoLead,
+        arcSiteProject,
+        arrayBuffer,
+      )
     const customerId = pestRouteCustomerCreateResponse.result
 
     await this.prisma.commercialSales.update({
@@ -101,9 +109,6 @@ export class AppController {
       },
     })
 
-    const arrayBuffer = await this.appService.getZohoRequestPDFArrayBuffer(
-      requestId,
-    )
     await this.pestRouteService.uploadProposal(
       arrayBuffer,
       customerId,
@@ -111,7 +116,7 @@ export class AppController {
       1,
       0,
     )
-    await this.pestRouteService.uplodDiagram(
+    await this.pestRouteService.uploadDiagram(
       arrayBuffer,
       customerId,
       'Service Diagram',
