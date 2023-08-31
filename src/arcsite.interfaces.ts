@@ -37,7 +37,6 @@ interface ArcSiteProject {
   name: string
   created_at: string
   updated_at: string
-  job_number: string
   customer: Customer
   work_site_address: CustomerAddress
   sale_rep: SaleRep

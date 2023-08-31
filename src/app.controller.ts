@@ -35,10 +35,15 @@ export class AppController {
     @Body() body: ArcSiteProposalSignedPayload,
   ) {
     this.logger.log('body', body)
-
     const { project_id, url } = body.data
-    const project = await this.appService.getArcSiteProject(project_id)
-    const lead = await this.appService.findZohoLead(project.job_number)
+
+    const { zohoLeadId } = await this.prisma.commercialSales.findUniqueOrThrow({
+      where: {
+        arcSiteProjectId: project_id,
+      },
+    })
+
+    const lead = await this.appService.findZohoLead(zohoLeadId)
 
     const requestDocument = await this.appService.createZohoDocument(
       lead.Company,
