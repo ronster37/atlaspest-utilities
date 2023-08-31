@@ -22,6 +22,7 @@ export class PestRoutesService {
       zip: arcSiteProject.customer.address.zip_code,
       phone1: arcSiteProject.customer.phone,
       email: arcSiteProject.customer.email,
+      companyName: zohoLead.Company,
       // This sets the customer as a commercial customer
       sourceID: 14,
       status: 1,
