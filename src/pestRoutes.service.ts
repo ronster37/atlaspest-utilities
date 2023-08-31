@@ -11,11 +11,11 @@ import * as os from 'os'
 export class PestRoutesService {
   constructor(private configService: ConfigService) {}
 
-  async createCustomer(arcSiteProject: ArcSiteProject) {
+  async createCustomer(zohoLead: ZohoLead, arcSiteProject: ArcSiteProject) {
     const url = `${this.configService.get('PESTROUTES_URL')}/customer/create`
     const requestData = {
-      fname: arcSiteProject.customer.name.split(' ')[0],
-      lname: arcSiteProject.customer.name.split(' ')[1],
+      fname: zohoLead.Fist_Name,
+      lname: zohoLead.Last_Name,
       address: arcSiteProject.customer.address.street,
       city: arcSiteProject.customer.address.city,
       state: arcSiteProject.customer.address.state,
