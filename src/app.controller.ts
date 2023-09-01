@@ -85,7 +85,7 @@ export class AppController {
     }
 
     const { id, arcSiteProjectId, zohoLeadId } =
-      await this.prisma.commercialSales.findFirst({
+      await this.prisma.commercialSales.findFirstOrThrow({
         where: {
           zohoSignRequestId: requestId,
         },
