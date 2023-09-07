@@ -201,8 +201,8 @@ Our primary focus is to earn each of our customer's trust by providing the best 
 Here is the quote for the services we discussed. If you have any questions as you look it over, please let me know.
 
 Thanks,
-${project.sale_rep.name}
-${project.sale_rep.phone}`
+${project.sales_rep.name}
+${project.sales_rep.phone}`
 
     const requestData = {
       requests: {

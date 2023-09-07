@@ -26,7 +26,7 @@ interface Customer {
   address: CustomerAddress
 }
 
-interface SaleRep {
+interface SalesRep {
   name: string
   email: string
   phone: string
@@ -39,5 +39,5 @@ interface ArcSiteProject {
   updated_at: string
   customer: Customer
   work_site_address: CustomerAddress
-  sale_rep: SaleRep
+  sales_rep: SalesRep
 }
