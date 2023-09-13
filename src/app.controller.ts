@@ -19,13 +19,15 @@ export class AppController {
 
   @UseGuards(ZohoGuard)
   @Post('zoho/appointment-scheduled')
-  async webhookZohoAppointmentScheduled(@Body() body: ZohoLeadPayload) {
-    this.logger.log('webhookZohoAppointmentScheduled for ' + body.leadId)
+  async webhookZohoAppointmentScheduled(@Body() body: ZohoDealPayload) {
+    this.logger.log('webhookZohoAppointmentScheduled for ' + body.dealId)
+    this.logger.log(JSON.stringify(body))
 
     const arcSiteProject = await this.appService.createArcSiteProject(body)
     await this.prisma.commercialSales.create({
       data: {
-        zohoLeadId: body.leadId,
+        zohoDealId: body.dealId,
+        zohoContactId: body.contactId,
         arcSiteProjectId: arcSiteProject.id,
       },
     })
@@ -39,25 +41,34 @@ export class AppController {
     this.logger.log('body', body)
     const { project_id, url } = body.data
 
-    const { zohoLeadId } = await this.prisma.commercialSales.findUniqueOrThrow({
+    const commercialSale = await this.prisma.commercialSales.findUnique({
       where: {
         arcSiteProjectId: project_id,
       },
     })
 
-    const lead = await this.appService.findZohoLead(zohoLeadId)
+    // Skip this step for arc-site projects that are created without a Zoho deal
+    if (!commercialSale) {
+      this.logger.log(`No commercial sale found for project_id ${project_id}`)
+      return
+    }
+
+    const { zohoContactId, zohoDealId } = commercialSale
+    const contact = await this.appService.getZohoContact(zohoContactId)
+    const deal = await this.appService.getZohoDeal(zohoDealId)
     const project = await this.appService.getArcSiteProject(project_id)
 
     const requestDocument = await this.appService.createZohoDocument(
-      lead,
+      contact,
+      deal,
       project,
       url,
     )
 
-    // TODO: if a document already exists for this lead and project
+    // TODO: Check if a document already exists for this lead and project
     // If so, then do not create a new document and print error
     await this.prisma.commercialSales.update({
-      where: { zohoLeadId: lead.id, arcSiteProjectId: project_id },
+      where: { zohoDealId: zohoDealId, arcSiteProjectId: project_id },
       data: {
         zohoSignRequestId: requestDocument.request_id,
       },
@@ -65,13 +76,14 @@ export class AppController {
     await this.appService.addSignatureField(
       requestDocument.request_id,
       requestDocument.document_fields[0].document_id,
-      lead.Full_Name,
-      lead.Email,
+      contact.Full_Name,
+      contact.Email,
     )
     await this.appService.sendForSignature(requestDocument.request_id)
-    await this.appService.updateZohoLead(zohoLeadId, {
-      Lead_Status: 'Proposal Sent',
-    })
+    // TODO: Update the Zoho deal stage
+    // await this.appService.updateZohoLead(zohoLeadId, {
+    //   Lead_Status: 'Proposal Sent',
+    // })
   }
 
   @Post('zoho/document-signed')
@@ -84,14 +96,15 @@ export class AppController {
       return
     }
 
-    const { id, arcSiteProjectId, zohoLeadId } =
+    const { id, arcSiteProjectId, zohoContactId, zohoDealId } =
       await this.prisma.commercialSales.findFirstOrThrow({
         where: {
           zohoSignRequestId: requestId,
         },
       })
 
-    const zohoLead = await this.appService.findZohoLead(zohoLeadId)
+    const zohoContact = await this.appService.getZohoContact(zohoContactId)
+    const zohoDeal = await this.appService.getZohoDeal(zohoDealId)
     const arcSiteProject = await this.appService.getArcSiteProject(
       arcSiteProjectId,
     )
@@ -101,7 +114,8 @@ export class AppController {
     )
     const pestRouteCustomerCreateResponse =
       await this.pestRouteService.createCustomer(
-        zohoLead,
+        zohoContact,
+        zohoDeal,
         arcSiteProject,
         arrayBuffer,
       )
@@ -129,9 +143,9 @@ export class AppController {
 
     await this.emailService.send({
       // TODO: use the customer's name
-      subject: `New signed contract for ${zohoLead.Full_Name}`,
+      subject: `New signed contract for ${zohoContact.Full_Name}`,
       // TODO: use the customer's name and ID
-      text: `New signed contract for ${zohoLead.Full_Name}.\n\nCustomer ID: ${customerId}\n\nPlease set up subscription.`,
+      text: `New signed contract for ${zohoContact.Full_Name}.\n\nCustomer ID: ${customerId}\n\nPlease set up subscription.`,
     })
   }
 

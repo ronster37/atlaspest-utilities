@@ -86,7 +86,7 @@ export class AppService {
     return response.data.access_token
   }
 
-  async createArcSiteProject(body: ZohoLeadPayload) {
+  async createArcSiteProject(body: ZohoDealPayload) {
     const { customer, workSite, salesRep, company } = body
 
     const response = await axios.post<ArcSiteProject>(
@@ -95,7 +95,7 @@ export class AppService {
         name: company,
         owner: salesRep.email,
         customer: {
-          name: customer.name,
+          name: `${customer.firstName} ${customer.lastName}`,
           phone: customer.phone,
           email: customer.email,
           address: {
@@ -127,14 +127,18 @@ export class AppService {
     return response.data
   }
 
-  async updateArcSiteProject(project_id: string, body: ZohoLeadPayload) {
+  async updateArcSiteProject(project_id: string, body: ZohoDealPayload) {
+    const { customer } = body
+
     await axios.patch<ArcSiteProject>(
       `${this.configService.get('ARCSITE_URL')}/projects/${project_id}`,
       {
         name: body.company,
         operator: 'office@atlaspest.com',
         customer: {
-          name: body.customer.name,
+          name: `${customer.firstName} ${customer.lastName}`,
+          phone: customer.phone,
+          email: customer.email,
         },
         sales_rep: {
           name: `${body.salesRep.firstName} ${body.salesRep.lastName}`,
@@ -163,18 +167,18 @@ export class AppService {
     return response.data
   }
 
-  async findZohoLead(id: string) {
-    const url = `${this.configService.get('ZOHO_URL')}/Leads/${id}`
-    const response = await this.zohoAxiosInstance.get<ZohoLeadResponse>(url)
+  async getZohoDeal(id: string) {
+    const url = `${this.configService.get('ZOHO_URL')}/Deals/${id}`
+    const response = await this.zohoAxiosInstance.get<ZohoDealResponse>(url)
 
     return response.data.data[0]
   }
 
-  updateZohoLead(id: string, data: any) {
-    const url = `${this.configService.get('ZOHO_URL')}/Leads/${id}`
-    return this.zohoAxiosInstance.put<ZohoLeadResponse>(url, {
-      data: [data],
-    })
+  async getZohoContact(id: string) {
+    const url = `${this.configService.get('ZOHO_URL')}/Contacts/${id}`
+    const response = await this.zohoAxiosInstance.get<ZohoContactResponse>(url)
+
+    return response.data.data[0]
   }
 
   async getZohoRequestPDFArrayBuffer(requestId: string) {
@@ -189,12 +193,13 @@ export class AppService {
   }
 
   async createZohoDocument(
-    zohoLead: ZohoLead,
+    zohoContact: ZohoContact,
+    zohoDeal: ZohoDeal,
     project: ArcSiteProject,
     pdfUrl: string,
   ) {
     const url = `${this.configService.get('ZOHO_SIGN_URL')}/requests`
-    const notes = `Hey ${zohoLead.Fist_Name}!
+    const notes = `Hey ${zohoContact.First_Name}!
 
 It was great meeting with you today. Thank you again for your time and the opportunity to take care of any pest problems here.
 Our primary focus is to earn each of our customer's trust by providing the best quality service with a hassle-free and convenient experience. We are really looking forward to earning your business as well.
@@ -206,7 +211,7 @@ ${project.sales_rep.phone}`
 
     const requestData = {
       requests: {
-        request_name: `Atlas Pest Services Proposal for ${zohoLead.Company}`,
+        request_name: `Atlas Pest Services Proposal for ${zohoDeal.Deal_Name}`,
         notes,
         expiration_days: this.configService.get('ZOHO_SIGN_EXPIRATION_DAYS'),
         email_reminders: true,

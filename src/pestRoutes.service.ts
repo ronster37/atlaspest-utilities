@@ -13,15 +13,16 @@ export class PestRoutesService {
   constructor(private configService: ConfigService) {}
 
   async createCustomer(
-    zohoLead: ZohoLead,
+    zohoContact: ZohoContact,
+    zohoDeal: ZohoDeal,
     arcSiteProject: ArcSiteProject,
     arrayBuffer: ArrayBuffer,
   ) {
     const url = `${this.configService.get('PESTROUTES_URL')}/customer/create`
     const isMultiUnit = await this.isMultiUnit(arrayBuffer)
     const requestData = {
-      fname: zohoLead.Fist_Name,
-      lname: zohoLead.Last_Name,
+      fname: zohoContact.First_Name,
+      lname: zohoContact.Last_Name,
       address: arcSiteProject.work_site_address.street,
       city: arcSiteProject.work_site_address.city,
       state: arcSiteProject.work_site_address.state,
@@ -32,7 +33,7 @@ export class PestRoutesService {
       specialScheduling: arcSiteProject.customer.second_email
         ? `Second Email: ${arcSiteProject.customer.second_email}`
         : '',
-      companyName: zohoLead.Company,
+      companyName: zohoDeal.Deal_Name,
       // This sets the customer as a commercial property
       commercialAccount: 1,
       // This sets the customer as a commercial customer

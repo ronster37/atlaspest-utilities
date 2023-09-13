@@ -5,7 +5,8 @@ interface ZohoRefreshAccessTokenResponse {
 }
 
 interface Customer {
-  name: string
+  firstName: string
+  lastName: string
   phone: string
   email: string
 }
@@ -24,30 +25,13 @@ interface SalesRep {
   phone: string
 }
 
-interface ZohoLeadPayload {
-  leadId: string
+interface ZohoDealPayload {
+  dealId: string
+  contactId: string
   company: string
   customer: Customer
   workSite: WorkSite
   salesRep: SalesRep
-}
-
-interface ZohoLeadResponse {
-  data: ZohoLead[]
-}
-
-interface ZohoLead {
-  id: string
-  Company: string
-  Email: string
-  Fist_Name: string
-  Last_Name: string
-  Full_Name: string
-  Phone: string
-  Street: string
-  City: string
-  State: string
-  Zip_Code: string
 }
 
 interface ZohoCreateDocumentResponse {
@@ -96,4 +80,49 @@ interface ZohoSignNotification {
   operation_type: string
   action_id: number
   performed_by_name: string
+}
+
+interface ZohoDealResponse {
+  data: ZohoDeal[]
+}
+
+interface ZohoDeal {
+  id: string
+  Owner: Owner
+  Email: string
+  Currency: string
+  Deal_Name: string
+  Stage: string
+  Contact_Name: Contact
+}
+
+interface Owner {
+  id: string
+  name: string
+  email: string
+}
+
+interface Contact {
+  id: string
+  name: string
+}
+
+interface ZohoContactResponse {
+  data: ZohoContact[]
+}
+
+interface ZohoContact {
+  id: string
+  Owner: Owner
+  Full_Name: string
+  First_Name: string
+  Last_Name: string
+  Email: string
+  Secondary_Email: string
+  Phone: string
+  Other_Phone: string
+  Mailing_Street: string
+  Mailng_City: string
+  Mailing_State: string
+  Mailing_Zip: string
 }
