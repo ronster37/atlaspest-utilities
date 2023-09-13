@@ -4,7 +4,6 @@ import { ZohoGuard } from './auth/zoho.guard'
 import { PestRoutesService } from './pestRoutes.service'
 import { PrismaService } from './prisma.service'
 import { EmailService } from './email.service'
-import * as pdf from 'pdf-parse'
 
 @Controller()
 export class AppController {
@@ -142,9 +141,7 @@ export class AppController {
     )
 
     await this.emailService.send({
-      // TODO: use the customer's name
       subject: `New signed contract for ${zohoContact.Full_Name}`,
-      // TODO: use the customer's name and ID
       text: `New signed contract for ${zohoContact.Full_Name}.\n\nCustomer ID: ${customerId}\n\nPlease set up subscription.`,
     })
   }
