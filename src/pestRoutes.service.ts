@@ -30,6 +30,8 @@ export class PestRoutesService {
       phone1: arcSiteProject.customer.phone,
       phone2: arcSiteProject.customer.second_phone,
       email: arcSiteProject.customer.email,
+      smsReminders: 1,
+      emailReminders: 1,
       specialScheduling: arcSiteProject.customer.second_email
         ? `Second Email: ${arcSiteProject.customer.second_email}`
         : '',
