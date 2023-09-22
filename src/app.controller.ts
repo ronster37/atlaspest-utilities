@@ -79,10 +79,7 @@ export class AppController {
       contact.Email,
     )
     await this.appService.sendForSignature(requestDocument.request_id)
-    // TODO: Update the Zoho deal stage
-    // await this.appService.updateZohoLead(zohoLeadId, {
-    //   Lead_Status: 'Proposal Sent',
-    // })
+    await this.appService.updateZohoDeal(deal.id, 'Proposal Sent')
   }
 
   @Post('zoho/document-signed')
@@ -140,6 +137,7 @@ export class AppController {
       'Service Diagram',
     )
 
+    await this.appService.updateZohoDeal(zohoDeal.id, 'Sold')
     await this.emailService.send({
       subject: `New signed contract for ${zohoContact.Full_Name}`,
       text: `New signed contract for ${zohoContact.Full_Name}.\n\nCustomer ID: ${customerId}\n\nPlease set up subscription.`,

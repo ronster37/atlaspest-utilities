@@ -174,6 +174,20 @@ export class AppService {
     return response.data.data[0]
   }
 
+  updateZohoDeal(
+    id: string,
+    stage: 'Appt Scheduled' | 'Proposal Sent' | 'Sold',
+  ) {
+    const url = `${this.configService.get('ZOHO_URL')}/Deals/${id}`
+    return this.zohoAxiosInstance.put(url, {
+      data: [
+        {
+          Stage: stage,
+        },
+      ],
+    })
+  }
+
   async getZohoContact(id: string) {
     const url = `${this.configService.get('ZOHO_URL')}/Contacts/${id}`
     const response = await this.zohoAxiosInstance.get<ZohoContactResponse>(url)
