@@ -55,6 +55,7 @@ export class PestRoutesService {
     const result = await pdf(arrayBuffer)
 
     return (
+      result.text.includes('Multi-Unit Property') &&
       result.text
         .split('Multi-Unit Property')[1]
         .substring(0, 5)
@@ -62,6 +63,31 @@ export class PestRoutesService {
         .replace(/\s/g, '')
         .indexOf('yes') > -1
     )
+  }
+
+  async createAdditionalContactIfSecondEmailOrPhoneExists(
+    customerId: string,
+    zohoContact: ZohoContact,
+    arcSiteProject: ArcSiteProject,
+  ) {
+    const { second_email, second_phone } = arcSiteProject.customer
+    const url = `${this.configService.get(
+      'PESTROUTES_URL',
+    )}/additionalContact/create`
+    const requestData = {
+      customerID: customerId,
+      additionalContactTypeID: 2,
+      fname: zohoContact.First_Name,
+      lname: zohoContact.Last_Name,
+      phone: second_phone || '',
+      email: second_email || '',
+      smsReminders: 1,
+      emailReminders: 1,
+    }
+
+    if (second_phone || second_email) {
+      await axios.post(url, requestData, this.getAuthorization())
+    }
   }
 
   async uploadProposal(

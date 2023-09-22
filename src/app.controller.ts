@@ -117,6 +117,11 @@ export class AppController {
       )
     const customerId = pestRouteCustomerCreateResponse.result
 
+    await this.pestRouteService.createAdditionalContactIfSecondEmailOrPhoneExists(
+      customerId,
+      zohoContact,
+      arcSiteProject,
+    )
     await this.prisma.commercialSales.update({
       where: { id },
       data: {
