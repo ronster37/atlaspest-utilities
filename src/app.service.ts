@@ -116,7 +116,7 @@ export class AppService {
           name: `${customer.firstName} ${customer.lastName}`,
           // Email is required or project creation will fail
           email: customer.email,
-          second_email: customer.secondEmail || '',
+          second_email: customer.secondEmail || null,
           phone: customer.phone || '',
           second_phone: customer.secondPhone || '',
           address: {
@@ -159,7 +159,7 @@ export class AppService {
         customer: {
           name: `${customer.firstName} ${customer.lastName}`,
           email: customer.email,
-          second_email: customer.secondEmail || '',
+          second_email: customer.secondEmail || null,
           phone: customer.phone || '',
           second_phone: customer.secondPhone || '',
         },
