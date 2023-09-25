@@ -4,7 +4,7 @@ interface ZohoRefreshAccessTokenResponse {
   expires_in: number
 }
 
-interface Customer {
+interface ZohoDealCustomer {
   firstName: string
   lastName: string
   phone: string
@@ -31,7 +31,7 @@ interface ZohoDealPayload {
   dealId: string
   contactId: string
   company: string
-  customer: Customer
+  customer: ZohoDealCustomer
   workSite: WorkSite
   salesRep: SalesRep
 }
