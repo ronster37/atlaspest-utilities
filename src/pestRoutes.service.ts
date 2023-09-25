@@ -7,6 +7,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
 import * as pdf from 'pdf-parse'
+import { DateTime } from 'luxon'
 
 @Injectable()
 export class PestRoutesService {
@@ -85,6 +86,24 @@ export class PestRoutesService {
     if (second_phone || second_email) {
       await axios.post(url, requestData, this.getAuthorization())
     }
+  }
+
+  async createRedNote(customerId: string, note: string) {
+    const url = `${this.configService.get('PESTROUTES_URL')}/note/create`
+    const requestData = {
+      customerID: customerId,
+      date: DateTime.now()
+        .setZone('America/Los_Angeles')
+        .toFormat('yyyy-MM-dd'),
+      // This sets the note as a red note
+      contactType: 8,
+      showOnInvoice: 0,
+      notes: note,
+      showTech: 1,
+      showCustomer: 0,
+    }
+
+    await axios.post(url, requestData, this.getAuthorization())
   }
 
   async uploadProposal(
