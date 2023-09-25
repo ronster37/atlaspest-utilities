@@ -96,8 +96,11 @@ export class AppService {
         owner: salesRep.email,
         customer: {
           name: `${customer.firstName} ${customer.lastName}`,
-          phone: customer.phone,
+          // Email is required or project creation will fail
           email: customer.email,
+          second_email: customer.secondEmail || '',
+          phone: customer.phone || '',
+          second_phone: customer.secondPhone || '',
           address: {
             street: workSite.street,
             city: workSite.city,
@@ -137,8 +140,10 @@ export class AppService {
         operator: 'office@atlaspest.com',
         customer: {
           name: `${customer.firstName} ${customer.lastName}`,
-          phone: customer.phone,
           email: customer.email,
+          second_email: customer.secondEmail || '',
+          phone: customer.phone || '',
+          second_phone: customer.secondPhone || '',
         },
         sales_rep: {
           name: `${body.salesRep.firstName} ${body.salesRep.lastName}`,

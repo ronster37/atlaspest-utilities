@@ -8,7 +8,9 @@ interface Customer {
   firstName: string
   lastName: string
   phone: string
+  secondPhone: string | null
   email: string
+  secondEmail: string | null
 }
 
 interface WorkSite {
