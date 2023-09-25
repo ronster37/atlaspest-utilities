@@ -63,6 +63,29 @@ export class PestRoutesService {
     )
   }
 
+  async getAdditionalServiceInfo(arrayBuffer: any) {
+    const result = await pdf(arrayBuffer)
+    const pdfText = result.text
+    const ASI_TEXT = 'Additional Service Information'
+    const MUP_TEXT = 'Multi-Unit Property'
+    const UQPS_TEXT = 'Unit quote per service'
+    const FOR_TEXT = '*For'
+
+    if (pdfText.includes(ASI_TEXT)) {
+      const asiText = pdfText.split(ASI_TEXT)[1]
+
+      if (asiText.includes(MUP_TEXT)) {
+        return asiText.split(MUP_TEXT)[0]
+      } else if (asiText.includes(UQPS_TEXT)) {
+        return asiText.split(UQPS_TEXT)[0]
+      } else if (asiText.includes(FOR_TEXT)) {
+        return asiText.split(FOR_TEXT)[0]
+      }
+    }
+
+    return ''
+  }
+
   async createAdditionalContactIfSecondEmailOrPhoneExists(
     customerId: string,
     zohoContact: ZohoContact,

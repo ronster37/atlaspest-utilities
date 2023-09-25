@@ -4,7 +4,6 @@ import { ZohoGuard } from './auth/zoho.guard'
 import { PestRoutesService } from './pestRoutes.service'
 import { PrismaService } from './prisma.service'
 import { EmailService } from './email.service'
-import { DateTime } from 'luxon'
 
 @Controller()
 export class AppController {
@@ -118,17 +117,26 @@ export class AppController {
       )
     const customerId = pestRouteCustomerCreateResponse.result
 
-    await this.pestRouteService.createAdditionalContactIfSecondEmailOrPhoneExists(
-      customerId,
-      zohoContact,
-      arcSiteProject,
-    )
+    // Once the customer is created, update the commercial sale with the pestRoutesCustomerId
     await this.prisma.commercialSales.update({
       where: { id },
       data: {
         pestRoutesCustomerId: Number(customerId),
       },
     })
+
+    await this.pestRouteService.createAdditionalContactIfSecondEmailOrPhoneExists(
+      customerId,
+      zohoContact,
+      arcSiteProject,
+    )
+    const info = await this.pestRouteService.getAdditionalServiceInfo(
+      arrayBuffer,
+    )
+
+    if (info) {
+      await this.pestRouteService.createRedNote(customerId, info)
+    }
 
     await this.pestRouteService.uploadProposal(
       arrayBuffer,
