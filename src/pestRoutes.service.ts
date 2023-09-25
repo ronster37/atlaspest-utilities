@@ -32,9 +32,6 @@ export class PestRoutesService {
       email: arcSiteProject.customer.email,
       smsReminders: 1,
       emailReminders: 1,
-      specialScheduling: arcSiteProject.customer.second_email
-        ? `Second Email: ${arcSiteProject.customer.second_email}`
-        : '',
       companyName: zohoDeal.Deal_Name,
       // This sets the customer as a commercial property
       commercialAccount: 1,
