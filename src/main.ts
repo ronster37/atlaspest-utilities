@@ -12,6 +12,27 @@ async function bootstrap() {
   Sentry.init({
     dsn: configService.get('SENTRY_DSN'),
     environment: configService.get('NODE_ENV'),
+    // beforeSend(event, hint) {
+    //   const originalException: any = hint?.originalException
+
+    //   console.log('in beforeSend')
+
+    //   if (hint && originalException && originalException.isAxiosError) {
+    //     if (originalException.response && originalException.response.data) {
+    //       const contexts = {
+    //         ...event.contexts,
+    //       }
+    //       contexts.errorResponse = {
+    //         data: JSON.parse(originalException.response.data.toString()),
+    //       }
+    //       event.contexts = contexts
+
+    //       console.log(JSON.parse(originalException.response.data.toString()))
+    //     }
+    //   }
+
+    //   return event
+    // },
   })
 
   // Import the filter globally, capturing all exceptions on all routes
