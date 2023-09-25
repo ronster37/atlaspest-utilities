@@ -1,8 +1,7 @@
-import { HttpAdapterHost, NestFactory } from '@nestjs/core'
+import { NestFactory } from '@nestjs/core'
 import type { NestExpressApplication } from '@nestjs/platform-express'
 import { AppModule } from './app.module'
 import * as Sentry from '@sentry/node'
-import { SentryFilter } from './sentry.filter'
 import { ConfigService } from '@nestjs/config'
 
 async function bootstrap() {
@@ -34,10 +33,6 @@ async function bootstrap() {
     //   return event
     // },
   })
-
-  // Import the filter globally, capturing all exceptions on all routes
-  const { httpAdapter } = app.get(HttpAdapterHost)
-  app.useGlobalFilters(new SentryFilter(httpAdapter))
 
   await app.listen(process.env.PORT || 3000)
 }
