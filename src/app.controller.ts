@@ -79,7 +79,9 @@ export class AppController {
       contact.Email,
     )
     await this.appService.sendForSignature(requestDocument.request_id)
-    await this.appService.updateZohoDeal(deal.id, 'Proposal Sent')
+    await this.appService.updateZohoDeal(deal.id, {
+      Stage: 'Proposal Sent',
+    })
   }
 
   @Post('zoho/document-signed')
@@ -130,13 +132,6 @@ export class AppController {
       zohoContact,
       arcSiteProject,
     )
-    const info = await this.pestRouteService.getAdditionalServiceInfo(
-      arrayBuffer,
-    )
-
-    if (info) {
-      await this.pestRouteService.createRedNote(customerId, info)
-    }
 
     await this.pestRouteService.uploadProposal(
       arrayBuffer,
@@ -151,10 +146,47 @@ export class AppController {
       'Service Diagram',
     )
 
-    await this.appService.updateZohoDeal(zohoDeal.id, 'Sold')
+    const proposalDetails = await this.pestRouteService.getProposalDetails(
+      arrayBuffer,
+    )
+
+    if (proposalDetails.additionalServiceInformation) {
+      await this.pestRouteService.createRedNote(
+        customerId,
+        proposalDetails.additionalServiceInformation,
+      )
+    }
+
+    await this.appService.updateZohoDeal(zohoDealId, {
+      Stage: 'Sold',
+      Service_Type: proposalDetails.serviceType,
+      Initial_Price: proposalDetails.initialPrice,
+      Contract_Length: proposalDetails.contractLength,
+      Additional_Service_Information:
+        proposalDetails.additionalServiceInformation,
+      Annual_Contract_Value: proposalDetails.annualContractValue,
+      Recurring_Price: proposalDetails.recurringPrice,
+      Recurring_Frequency: proposalDetails.recurringFrequency,
+      Multi_Unit_Property: proposalDetails.isMultiUnit,
+      Unit_Quota_per_Service: proposalDetails.unitQuotaPerService,
+    })
+    // TODO: Add requested start date
     await this.emailService.send({
       subject: `New signed contract for ${zohoContact.Full_Name}`,
-      text: `New signed contract for ${zohoContact.Full_Name}.\n\nCustomer ID: ${customerId}\n\nPlease set up subscription.`,
+      text: `New signed contract for ${zohoContact.Full_Name}.
+
+Customer ID: ${customerId}
+Service Type: ${proposalDetails.serviceType}
+Initial Price: ${proposalDetails.initialPrice}
+Recurring Price: ${proposalDetails.recurringPrice}
+Recurring Frequency: ${proposalDetails.recurringFrequency}
+Contract Length: ${proposalDetails.contractLength}
+Multi Unit Property: ${proposalDetails.isMultiUnit ? 'Yes' : 'No'}
+Unit Quota per Service: ${proposalDetails.unitQuotaPerService}
+Additional Service Information: ${proposalDetails.additionalServiceInformation}
+
+Please set up subscription.
+`,
     })
   }
 

@@ -8,6 +8,15 @@ import * as path from 'path'
 import * as os from 'os'
 import * as pdf from 'pdf-parse'
 import { DateTime } from 'luxon'
+import * as currency from 'currency.js'
+
+const IS_TEXT = 'Initial Service'
+const RS_TEXT = 'Recurring Services'
+const TRP_TEXT = 'Total Recurring Price'
+const ASI_TEXT = 'Additional Service Information'
+const MUP_TEXT = 'Multi-Unit Property'
+const UQPS_TEXT = 'Unit quota per service'
+const FOR_TEXT = '*For'
 
 @Injectable()
 export class PestRoutesService {
@@ -17,10 +26,12 @@ export class PestRoutesService {
     zohoContact: ZohoContact,
     zohoDeal: ZohoDeal,
     arcSiteProject: ArcSiteProject,
-    arrayBuffer: ArrayBuffer,
+    arrayBuffer: Buffer,
   ) {
     const url = `${this.configService.get('PESTROUTES_URL')}/customer/create`
-    const isMultiUnit = await this.isMultiUnit(arrayBuffer)
+    const result = await pdf(arrayBuffer)
+    const pdfText = result.text
+    const isMultiUnit = await this.isMultiUnit(pdfText)
     const requestData = {
       fname: zohoContact.First_Name,
       lname: zohoContact.Last_Name,
@@ -49,12 +60,56 @@ export class PestRoutesService {
     return response.data
   }
 
-  async isMultiUnit(arrayBuffer: any) {
+  async getProposalDetails(arrayBuffer: Buffer) {
     const result = await pdf(arrayBuffer)
+    const pdfText = result.text
 
+    const recurringPrice = this.getTotalRecurringPrice(pdfText)
+    const recurringFrequency = this.getRecurringFrequency(pdfText)
+    const frequencies = {
+      daily: 365, // Contracts that occur daily (365 days a year)
+      weekly: 52, // Contracts that occur weekly (52 weeks a year)
+      biweekly: 26, // Contracts that occur every two weeks (26 times a year)
+      monthly: 12, // Contracts that occur monthly (12 times a year)
+      bimonthly: 6, // Contracts that occur every two months (6 times a year)
+      quarterly: 4, // Contracts that occur quarterly (4 times a year)
+      semiannually: 2, // Contracts that occur semiannually (2 times a year)
+      annually: 1, // Contracts that occur annually (1 time a year)
+    }
+
+    return {
+      serviceType: this.getServiceType(pdfText),
+      initialPrice: this.getInitialTotal(pdfText),
+      recurringPrice: recurringPrice,
+      recurringFrequency: recurringFrequency,
+      contractLength: this.getContractLength(pdfText),
+      // requestedStartDate: await this.getRequestedStartDate(arrayBuffer),
+      isMultiUnit: this.isMultiUnit(pdfText),
+      unitQuotaPerService: this.getUnitQuotePerService(pdfText),
+      additionalServiceInformation: this.getAdditionalServiceInfo(pdfText),
+      annualContractValue: currency(recurringPrice)
+        .multiply(frequencies[recurringFrequency.toLowerCase()])
+        .toString(),
+    }
+  }
+
+  getInitialTotal(pdfText: string) {
+    let total = ''
+
+    if (pdfText.includes(IS_TEXT)) {
+      total = pdfText
+        .split(IS_TEXT)[1]
+        .split('Total')[1]
+        .match(/(?:\d{1,3}(?:,\d{3})*(?:\.\d+)?)|(?:\d+\.\d+)/)[0]
+    }
+
+    return total
+  }
+
+  isMultiUnit(pdfText: string) {
     return (
-      result.text.includes('Multi-Unit Property') &&
-      result.text
+      pdfText.includes('Multi-Unit Property') &&
+      pdfText
         .split('Multi-Unit Property')[1]
         .substring(0, 5)
         .toLowerCase()
@@ -63,27 +118,83 @@ export class PestRoutesService {
     )
   }
 
-  async getAdditionalServiceInfo(arrayBuffer: any) {
-    const result = await pdf(arrayBuffer)
-    const pdfText = result.text
-    const ASI_TEXT = 'Additional Service Information'
-    const MUP_TEXT = 'Multi-Unit Property'
-    const UQPS_TEXT = 'Unit quote per service'
-    const FOR_TEXT = '*For'
+  getUnitQuotePerService(pdfText: string) {
+    let unitQuote = ''
+
+    if (pdfText.includes(UQPS_TEXT)) {
+      unitQuote = pdfText.split(UQPS_TEXT)[1].match(/\d+/)[0]
+    }
+
+    return unitQuote
+  }
+
+  getTotalRecurringPrice(pdfText: string) {
+    let totalRecurringPrice = ''
+
+    if (pdfText.includes(TRP_TEXT)) {
+      totalRecurringPrice = pdfText
+        .split(TRP_TEXT)[1]
+        .match(/(?:\d{1,3}(?:,\d{3})*(?:\.\d+)?)|(?:\d+\.\d+)/)[0]
+    }
+
+    return totalRecurringPrice
+  }
+
+  getAdditionalServiceInfo(pdfText: string) {
+    let additionalServiceInfo = ''
 
     if (pdfText.includes(ASI_TEXT)) {
-      const asiText = pdfText.split(ASI_TEXT)[1]
+      additionalServiceInfo = pdfText.split(ASI_TEXT)[1]
 
-      if (asiText.includes(MUP_TEXT)) {
-        return asiText.split(MUP_TEXT)[0]
-      } else if (asiText.includes(UQPS_TEXT)) {
-        return asiText.split(UQPS_TEXT)[0]
-      } else if (asiText.includes(FOR_TEXT)) {
-        return asiText.split(FOR_TEXT)[0]
+      if (additionalServiceInfo.includes(MUP_TEXT)) {
+        additionalServiceInfo = additionalServiceInfo.split(MUP_TEXT)[0]
+      } else if (additionalServiceInfo.includes(UQPS_TEXT)) {
+        additionalServiceInfo = additionalServiceInfo.split(UQPS_TEXT)[0]
+      } else if (additionalServiceInfo.includes(FOR_TEXT)) {
+        additionalServiceInfo = additionalServiceInfo.split(FOR_TEXT)[0]
       }
     }
 
-    return ''
+    return additionalServiceInfo.trim()
+  }
+
+  getServiceType(pdfText: string) {
+    const recurringServiceText = this.getRecurringService(pdfText)
+    return recurringServiceText.replace(/^\S+\s*/, '')
+  }
+
+  getRecurringService(pdfText: string) {
+    let recurringServiceText = ''
+
+    if (pdfText.includes(RS_TEXT) && pdfText.includes(TRP_TEXT)) {
+      recurringServiceText = pdfText
+        .split(RS_TEXT)[1]
+        .split(TRP_TEXT)[0]
+        .replace(/[^a-zA-Z0-9$,. ]/g, '')
+    }
+
+    return recurringServiceText
+  }
+
+  getRecurringFrequency(pdfText: string) {
+    const recurringServiceText = this.getRecurringService(pdfText)
+    return recurringServiceText.split(' ')[0]
+  }
+
+  getContractLength(pdfText: string) {
+    let contractLengthText = ''
+
+    if (pdfText.includes('initial period of')) {
+      contractLengthText = pdfText
+        .split('initial period of')[1]
+        .trim()
+        .split(' ')
+        .slice(0, 2)
+        .join(' ')
+        .replace(/\./g, '')
+    }
+
+    return contractLengthText
   }
 
   async createAdditionalContactIfSecondEmailOrPhoneExists(

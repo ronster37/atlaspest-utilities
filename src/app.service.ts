@@ -4,6 +4,24 @@ import axios, { AxiosInstance } from 'axios'
 import * as FormData from 'form-data'
 import { PrismaService } from './prisma.service'
 
+type Stage = 'Appt Scheduled' | 'Proposal Sent' | 'Sold'
+
+interface UpdateZohoDealStage {
+  Stage: Stage
+}
+interface UpdateZohoDealProposalDetails {
+  Stage?: Stage
+  Service_Type: string
+  Initial_Price: string
+  Contract_Length: string
+  Additional_Service_Information: string
+  Annual_Contract_Value: string
+  Recurring_Price: string
+  Recurring_Frequency: string
+  Multi_Unit_Property: boolean
+  Unit_Quota_per_Service: string
+}
+
 @Injectable()
 export class AppService {
   private zohoAxiosInstance: AxiosInstance
@@ -181,15 +199,11 @@ export class AppService {
 
   updateZohoDeal(
     id: string,
-    stage: 'Appt Scheduled' | 'Proposal Sent' | 'Sold',
+    data: UpdateZohoDealProposalDetails | UpdateZohoDealStage,
   ) {
     const url = `${this.configService.get('ZOHO_URL')}/Deals/${id}`
     return this.zohoAxiosInstance.put(url, {
-      data: [
-        {
-          Stage: stage,
-        },
-      ],
+      data: [data],
     })
   }
 
@@ -200,7 +214,7 @@ export class AppService {
     return response.data.data[0]
   }
 
-  async getZohoRequestPDFArrayBuffer(requestId: string) {
+  async getZohoRequestPDFArrayBuffer(requestId: string): Promise<Buffer> {
     const url = `${this.configService.get(
       'ZOHO_SIGN_URL',
     )}/requests/${requestId}/pdf`
