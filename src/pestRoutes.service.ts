@@ -66,6 +66,7 @@ export class PestRoutesService {
 
     const recurringPrice = this.getTotalRecurringPrice(pdfText)
     const recurringFrequency = this.getRecurringFrequency(pdfText)
+    const initialPrice = this.getInitialTotal(pdfText)
     const frequencies = {
       daily: 365, // Contracts that occur daily (365 days a year)
       weekly: 52, // Contracts that occur weekly (52 weeks a year)
@@ -79,7 +80,7 @@ export class PestRoutesService {
 
     return {
       serviceType: this.getServiceType(pdfText),
-      initialPrice: this.getInitialTotal(pdfText),
+      initialPrice: initialPrice,
       recurringPrice: recurringPrice,
       recurringFrequency: recurringFrequency,
       contractLength: this.getContractLength(pdfText),
@@ -89,6 +90,7 @@ export class PestRoutesService {
       additionalServiceInformation: this.getAdditionalServiceInfo(pdfText),
       annualContractValue: currency(recurringPrice)
         .multiply(frequencies[recurringFrequency.toLowerCase()])
+        .add(initialPrice || 0)
         .toString(),
     }
   }

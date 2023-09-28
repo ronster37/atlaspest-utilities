@@ -79,8 +79,26 @@ export class AppController {
       contact.Email,
     )
     await this.appService.sendForSignature(requestDocument.request_id)
+
+    const arrayBuffer = await this.appService.getZohoRequestPDFArrayBuffer(
+      requestDocument.request_id,
+    )
+    const proposalDetails = await this.pestRouteService.getProposalDetails(
+      arrayBuffer,
+    )
+
     await this.appService.updateZohoDeal(deal.id, {
       Stage: 'Proposal Sent',
+      Service_Type: proposalDetails.serviceType,
+      Initial_Price: proposalDetails.initialPrice,
+      Contract_Length: proposalDetails.contractLength,
+      Additional_Service_Information:
+        proposalDetails.additionalServiceInformation,
+      Annual_Contract_Value: proposalDetails.annualContractValue,
+      Recurring_Price: proposalDetails.recurringPrice,
+      Recurring_Frequency: proposalDetails.recurringFrequency,
+      Multi_Unit_Property: proposalDetails.isMultiUnit,
+      Unit_Quota_per_Service: proposalDetails.unitQuotaPerService,
     })
   }
 
@@ -159,16 +177,6 @@ export class AppController {
 
     await this.appService.updateZohoDeal(zohoDealId, {
       Stage: 'Sold',
-      Service_Type: proposalDetails.serviceType,
-      Initial_Price: proposalDetails.initialPrice,
-      Contract_Length: proposalDetails.contractLength,
-      Additional_Service_Information:
-        proposalDetails.additionalServiceInformation,
-      Annual_Contract_Value: proposalDetails.annualContractValue,
-      Recurring_Price: proposalDetails.recurringPrice,
-      Recurring_Frequency: proposalDetails.recurringFrequency,
-      Multi_Unit_Property: proposalDetails.isMultiUnit,
-      Unit_Quota_per_Service: proposalDetails.unitQuotaPerService,
     })
     // TODO: Add requested start date
     await this.emailService.send({
