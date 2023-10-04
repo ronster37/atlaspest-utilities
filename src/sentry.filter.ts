@@ -25,12 +25,7 @@ export class SentryFilter extends BaseExceptionFilter {
     let text = `Body:\n${body}`
 
     if (exception && exception.isAxiosError) {
-      this.logger.error(exception.isAxiosError)
-      this.logger.error(exception.response)
-
       if (exception.response && exception.response.data) {
-        this.logger.error(exception.response)
-
         try {
           this.logger.error(exception.config.url)
           this.logger.error(exception.response.data)
@@ -42,6 +37,8 @@ export class SentryFilter extends BaseExceptionFilter {
           )}`
         } catch (e) {}
       }
+    } else {
+      this.logger.log('Not Axios error')
     }
 
     await this.emailService.send({

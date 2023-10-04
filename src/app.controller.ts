@@ -87,6 +87,8 @@ export class AppController {
       arrayBuffer,
     )
 
+    this.logger.log('proposalDetails ' + JSON.stringify(proposalDetails))
+
     await this.appService.updateZohoDeal(deal.id, {
       Stage: 'Proposal Sent',
       Service_Type: proposalDetails.serviceType,
