@@ -19,7 +19,7 @@ export class AppController {
   @UseGuards(ZohoGuard)
   @Post('zoho/appointment-scheduled')
   async webhookZohoAppointmentScheduled(@Body() body: ZohoDealPayload) {
-    this.logger.log('webhookZohoAppointmentScheduled for ' + body.dealId)
+    this.logger.log('incoming webhookZohoAppointmentScheduled ' + body.dealId)
     this.logger.log(JSON.stringify(body))
 
     const arcSiteProject = await this.appService.createArcSiteProject(body)
@@ -37,7 +37,7 @@ export class AppController {
   async webhookArcSiteProposalSigned(
     @Body() body: ArcSiteProposalSignedPayload,
   ) {
-    this.logger.log('body', body)
+    this.logger.log('incoming webhook webhookArcSiteProposalSigned', body)
     const { project_id, url } = body.data
 
     const commercialSale = await this.prisma.commercialSales.findUnique({
@@ -104,6 +104,7 @@ export class AppController {
 
   @Post('zoho/document-signed')
   async webhookZohoDocumentSigned(@Body() body: ZohoSignWebhookPayload) {
+    this.logger.log('incoming webhookZohoDocumentSigned ' + body)
     const operationType = body.notifications.operation_type
     const requestId = String(body.requests.request_id)
 
