@@ -28,14 +28,17 @@ export class SentryFilter extends BaseExceptionFilter {
       if (exception.response && exception.response.data) {
         try {
           this.logger.error(exception.config.url)
-          this.logger.error(exception.response.data)
+          this.logger.error(JSON.stringify(exception.response.data, null, 2))
 
           text += `\n\nExtra Info:\n${exception.config.url}\n${JSON.stringify(
             JSON.parse(exception.response.data.toString()),
             null,
             2,
           )}`
-        } catch (e) {}
+        } catch (e) {
+          this.logger.error('Error parsing Axios error')
+          this.logger.error(e)
+        }
       }
     } else {
       this.logger.log('Not Axios error')
