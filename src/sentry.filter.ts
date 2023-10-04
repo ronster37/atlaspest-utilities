@@ -31,7 +31,7 @@ export class SentryFilter extends BaseExceptionFilter {
           this.logger.error(JSON.stringify(exception.response.data, null, 2))
 
           text += `\n\nExtra Info:\n${exception.config.url}\n${JSON.stringify(
-            JSON.parse(exception.response.data.toString()),
+            exception.response.data,
             null,
             2,
           )}`
