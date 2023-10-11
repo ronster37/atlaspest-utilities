@@ -13,10 +13,12 @@ import * as currency from 'currency.js'
 const IS_TEXT = 'Initial Service'
 const RS_TEXT = 'Recurring Services'
 const TRP_TEXT = 'Total Recurring Price'
-const ASI_TEXT = 'Additional Service Information'
+const ASI_TEXT = 'Service Specific Details'
 const MUP_TEXT = 'Multi-Unit Property'
-const UQPS_TEXT = 'Unit quota per service'
-const FOR_TEXT = '*For'
+const AESA_TEXT = 'At each scheduled appointment'
+const INDIVIDUAL_TEXT = 'Individual unit'
+const YOU_TEXT = 'You, the'
+const IF_TEXT = 'If at any time'
 
 @Injectable()
 export class PestRoutesService {
@@ -67,15 +69,33 @@ export class PestRoutesService {
     const recurringPrice = this.getTotalRecurringPrice(pdfText)
     const recurringFrequency = this.getRecurringFrequency(pdfText)
     const initialPrice = this.getInitialTotal(pdfText)
+    const contractLength = this.getContractLength(pdfText)
+    const contractLengthNumber = Number(contractLength.split(' ')[0])
+    const contractLengthFrequency = contractLength.split(' ')[1].toLowerCase()
+    // Assuming that if length is not in months, it is in days
+    const daysInContract =
+      contractLengthFrequency === 'months'
+        ? 30.437 * contractLengthNumber
+        : contractLengthNumber
+    // const frequencies = {
+    //   daily: 365, // Contracts that occur daily (365 days a year)
+    //   weekly: 52, // Contracts that occur weekly (52 weeks a year)
+    //   biweekly: 26, // Contracts that occur every two weeks (26 times a year)
+    //   monthly: 12, // Contracts that occur monthly (12 times a year)
+    //   bimonthly: 6, // Contracts that occur every two months (6 times a year)
+    //   quarterly: 4, // Contracts that occur quarterly (4 times a year)
+    //   semiannually: 2, // Contracts that occur semiannually (2 times a year)
+    //   annually: 1, // Contracts that occur annually (1 time a year)
+    // }
     const frequencies = {
-      daily: 365, // Contracts that occur daily (365 days a year)
-      weekly: 52, // Contracts that occur weekly (52 weeks a year)
-      biweekly: 26, // Contracts that occur every two weeks (26 times a year)
-      monthly: 12, // Contracts that occur monthly (12 times a year)
-      bimonthly: 6, // Contracts that occur every two months (6 times a year)
-      quarterly: 4, // Contracts that occur quarterly (4 times a year)
-      semiannually: 2, // Contracts that occur semiannually (2 times a year)
-      annually: 1, // Contracts that occur annually (1 time a year)
+      daily: 1,
+      weekly: 7,
+      biweekly: 14,
+      monthly: 30,
+      bimonthly: 60,
+      quarterly: 90,
+      semiannually: 180,
+      annually: 365,
     }
 
     return {
@@ -83,13 +103,15 @@ export class PestRoutesService {
       initialPrice: initialPrice,
       recurringPrice: recurringPrice,
       recurringFrequency: recurringFrequency,
-      contractLength: this.getContractLength(pdfText),
+      contractLength: contractLength,
       // requestedStartDate: await this.getRequestedStartDate(arrayBuffer),
       isMultiUnit: this.isMultiUnit(pdfText),
       unitQuotaPerService: this.getUnitQuotePerService(pdfText),
       additionalServiceInformation: this.getAdditionalServiceInfo(pdfText),
       annualContractValue: currency(recurringPrice)
-        .multiply(frequencies[recurringFrequency.toLowerCase()])
+        .multiply(
+          daysInContract / frequencies[recurringFrequency.toLowerCase()],
+        )
         .add(initialPrice || 0)
         .toString(),
     }
@@ -123,8 +145,8 @@ export class PestRoutesService {
   getUnitQuotePerService(pdfText: string) {
     let unitQuote = ''
 
-    if (pdfText.includes(UQPS_TEXT)) {
-      unitQuote = pdfText.split(UQPS_TEXT)[1].match(/\d+/)[0]
+    if (pdfText.includes(AESA_TEXT)) {
+      unitQuote = pdfText.split(AESA_TEXT)[1].match(/\d+/)[0]
     }
 
     return unitQuote
@@ -136,7 +158,7 @@ export class PestRoutesService {
     if (pdfText.includes(TRP_TEXT)) {
       totalRecurringPrice = pdfText
         .split(TRP_TEXT)[1]
-        .match(/(?:\d{1,3}(?:,\d{3})*(?:\.\d+)?)|(?:\d+\.\d+)/)[0]
+        .match(/(?:\d{1,}(?:,\d{3})*(?:\.\d+)?)|(?:\d+\.\d+)/)[0]
     }
 
     return totalRecurringPrice
@@ -146,14 +168,18 @@ export class PestRoutesService {
     let additionalServiceInfo = ''
 
     if (pdfText.includes(ASI_TEXT)) {
-      additionalServiceInfo = pdfText.split(ASI_TEXT)[1]
+      additionalServiceInfo = pdfText
+        .split(ASI_TEXT)[1]
+        .replace(/Page \d+ of \d+/g, '')
 
       if (additionalServiceInfo.includes(MUP_TEXT)) {
         additionalServiceInfo = additionalServiceInfo.split(MUP_TEXT)[0]
-      } else if (additionalServiceInfo.includes(UQPS_TEXT)) {
-        additionalServiceInfo = additionalServiceInfo.split(UQPS_TEXT)[0]
-      } else if (additionalServiceInfo.includes(FOR_TEXT)) {
-        additionalServiceInfo = additionalServiceInfo.split(FOR_TEXT)[0]
+      } else if (additionalServiceInfo.includes(INDIVIDUAL_TEXT)) {
+        additionalServiceInfo = additionalServiceInfo.split(INDIVIDUAL_TEXT)[0]
+      } else if (additionalServiceInfo.includes(YOU_TEXT)) {
+        additionalServiceInfo = additionalServiceInfo.split(YOU_TEXT)[0]
+      } else if (additionalServiceInfo.includes(IF_TEXT)) {
+        additionalServiceInfo = additionalServiceInfo.split(IF_TEXT)[0]
       }
     }
 
@@ -172,7 +198,9 @@ export class PestRoutesService {
       recurringServiceText = pdfText
         .split(RS_TEXT)[1]
         .split(TRP_TEXT)[0]
+        .replace(/\n/g, ' ')
         .replace(/[^a-zA-Z0-9$,. ]/g, '')
+        .trim()
     }
 
     return recurringServiceText
@@ -184,16 +212,12 @@ export class PestRoutesService {
   }
 
   getContractLength(pdfText: string) {
+    const pattern = /\d+ (days|months)/g
+    let match: RegExpExecArray
     let contractLengthText = ''
 
-    if (pdfText.includes('initial period of')) {
-      contractLengthText = pdfText
-        .split('initial period of')[1]
-        .trim()
-        .split(' ')
-        .slice(0, 2)
-        .join(' ')
-        .replace(/\./g, '')
+    while ((match = pattern.exec(pdfText)) !== null) {
+      contractLengthText = match[0]
     }
 
     return contractLengthText
