@@ -72,11 +72,12 @@ export class AppController {
         zohoSignRequestId: requestDocument.request_id,
       },
     })
-    await this.appService.addSignatureField(
+    await this.appService.addFields(
       requestDocument.request_id,
       requestDocument.document_fields[0].document_id,
       contact.Full_Name,
       contact.Email,
+      requestDocument.document_ids[0].total_pages - 1,
     )
     await this.appService.sendForSignature(requestDocument.request_id)
 

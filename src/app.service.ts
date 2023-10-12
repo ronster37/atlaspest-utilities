@@ -225,6 +225,16 @@ export class AppService {
     return response.data
   }
 
+  async getZohoRequest(requestId: string) {
+    const url = `${this.configService.get(
+      'ZOHO_SIGN_URL',
+    )}/requests/${requestId}`
+    const response =
+      await this.zohoAxiosInstance.get<ZohoCreateDocumentResponse>(url)
+
+    return response.data.requests
+  }
+
   async createZohoDocument(
     zohoContact: ZohoContact,
     zohoDeal: ZohoDeal,
@@ -275,17 +285,40 @@ ${project.sales_rep.phone}`
     return response.data.requests
   }
 
-  addSignatureField(
+  addFields(
     request_id: string,
     document_id: string,
     name: string,
     email: string,
+    lastPageIndex: number,
   ) {
     const url = `${this.configService.get(
       'ZOHO_SIGN_URL',
     )}/requests/${request_id}`
     const requestData = {
       requests: {
+        document_fields: [
+          {
+            fields: [
+              // This is the date the proposal was requested
+              {
+                document_id: document_id,
+                time_zone: 'America/Denver',
+                field_category: 'datefield',
+                field_label: 'Sign Date',
+                is_mandatory: true,
+                date_format: 'MM/dd/yyyy',
+                field_type_name: 'Date',
+                field_name: 'Sign Date',
+                abs_width: 98,
+                abs_height: 13,
+                x_coord: 504,
+                y_coord: 204,
+                page_no: lastPageIndex,
+              },
+            ],
+          },
+        ],
         actions: [
           {
             recipient_name: name,
@@ -302,10 +335,38 @@ ${project.sales_rep.phone}`
                 document_id: document_id,
                 is_mandatory: true,
                 x_coord: 50,
-                y_coord: 205,
-                abs_width: 230,
+                y_coord: 175,
+                abs_width: 155,
                 abs_height: 45,
-                page_no: 4,
+                page_no: lastPageIndex,
+              },
+              {
+                field_name: 'Sign Date',
+                field_label: 'Sign Date',
+                field_category: 'datefield',
+                field_type_name: 'Date',
+                date_format: 'MM/dd/yyyy',
+                document_id: document_id,
+                is_mandatory: true,
+                x_coord: 226,
+                y_coord: 204,
+                abs_width: 84,
+                abs_height: 13,
+                page_no: lastPageIndex,
+              },
+              {
+                field_name: 'Request Date',
+                field_label: 'Request Date',
+                field_category: 'datefield',
+                field_type_name: 'CustomDate',
+                date_format: 'MM/dd/yyyy',
+                document_id: document_id,
+                is_mandatory: true,
+                x_coord: 76,
+                y_coord: 293,
+                abs_width: 98,
+                abs_height: 13,
+                page_no: lastPageIndex,
               },
             ],
           },

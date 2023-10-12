@@ -47,11 +47,17 @@ interface ZohoCreateDocumentResponse {
 // we need for the moment
 interface ZohoRequest {
   document_fields: ZohoDocumentFields[]
+  document_ids: ZohoDocumentIds[]
   request_id: string
 }
 
 interface ZohoDocumentFields {
   document_id: string
+}
+
+interface ZohoDocumentIds {
+  document_id: string
+  total_pages: number
 }
 
 interface ZohoSignWebhookPayload {
