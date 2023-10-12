@@ -20,6 +20,22 @@ const INDIVIDUAL_TEXT = 'Individual unit'
 const YOU_TEXT = 'You, the'
 const IF_TEXT = 'If at any time'
 
+const ONE_TIME_PATTERN = /One[\s-]?Time/i
+const BI_MONTHLY_PATTERN = /Bi[\s-]?Monthly/i
+const FREQUENCIES_AND_MULTIPLIERS = [
+  { pattern: ONE_TIME_PATTERN, multiplier: 0 },
+  { pattern: /Weekly/i, multiplier: 51 },
+  { pattern: /Every[\s-]?2[\s-]?Weeks/i, multiplier: 25 },
+  { pattern: /Twice[\s-]?a[\s-]?Month/i, multiplier: 23 },
+  { pattern: /Monthly/i, multiplier: 11 },
+  { pattern: BI_MONTHLY_PATTERN, multiplier: 5 },
+  { pattern: /Quarterly/i, multiplier: 3 },
+  { pattern: /Seasonally/i, multiplier: 7 },
+]
+const RECURRING_FREQUENCY_PATTERNS = FREQUENCIES_AND_MULTIPLIERS.map(
+  (frequency) => frequency.pattern,
+)
+
 @Injectable()
 export class PestRoutesService {
   constructor(private configService: ConfigService) {}
@@ -70,32 +86,19 @@ export class PestRoutesService {
     const recurringFrequency = this.getRecurringFrequency(pdfText)
     const initialPrice = this.getInitialTotal(pdfText)
     const contractLength = this.getContractLength(pdfText)
-    const contractLengthNumber = Number(contractLength.split(' ')[0])
-    const contractLengthFrequency = contractLength.split(' ')[1].toLowerCase()
-    // Assuming that if length is not in months, it is in days
-    const daysInContract =
-      contractLengthFrequency === 'months'
-        ? 30.437 * contractLengthNumber
-        : contractLengthNumber
-    // const frequencies = {
-    //   daily: 365, // Contracts that occur daily (365 days a year)
-    //   weekly: 52, // Contracts that occur weekly (52 weeks a year)
-    //   biweekly: 26, // Contracts that occur every two weeks (26 times a year)
-    //   monthly: 12, // Contracts that occur monthly (12 times a year)
-    //   bimonthly: 6, // Contracts that occur every two months (6 times a year)
-    //   quarterly: 4, // Contracts that occur quarterly (4 times a year)
-    //   semiannually: 2, // Contracts that occur semiannually (2 times a year)
-    //   annually: 1, // Contracts that occur annually (1 time a year)
-    // }
-    const frequencies = {
-      daily: 1,
-      weekly: 7,
-      biweekly: 14,
-      monthly: 30,
-      bimonthly: 60,
-      quarterly: 90,
-      semiannually: 180,
-      annually: 365,
+    let annualContractValue: currency
+
+    if (ONE_TIME_PATTERN.test(recurringFrequency)) {
+      annualContractValue = currency(initialPrice)
+    } else {
+      for (const frequency of FREQUENCIES_AND_MULTIPLIERS) {
+        if (recurringFrequency.match(frequency.pattern)) {
+          annualContractValue = currency(recurringPrice)
+            .multiply(frequency.multiplier)
+            .add(initialPrice)
+          break
+        }
+      }
     }
 
     return {
@@ -108,12 +111,7 @@ export class PestRoutesService {
       isMultiUnit: this.isMultiUnit(pdfText),
       unitQuotaPerService: this.getUnitQuotePerService(pdfText),
       additionalServiceInformation: this.getAdditionalServiceInfo(pdfText),
-      annualContractValue: currency(recurringPrice)
-        .multiply(
-          daysInContract / frequencies[recurringFrequency.toLowerCase()],
-        )
-        .add(initialPrice || 0)
-        .toString(),
+      annualContractValue: annualContractValue.toString(),
     }
   }
 
@@ -188,7 +186,18 @@ export class PestRoutesService {
 
   getServiceType(pdfText: string) {
     const recurringServiceText = this.getRecurringService(pdfText)
-    return recurringServiceText.replace(/^\S+\s*/, '')
+    let serviceType = ''
+
+    for (const pattern of RECURRING_FREQUENCY_PATTERNS) {
+      const match = recurringServiceText.match(pattern)
+
+      if (match) {
+        serviceType = recurringServiceText.replace(pattern, '')
+        break // Remove the first match and exit the loop
+      }
+    }
+
+    return serviceType.trim()
   }
 
   getRecurringService(pdfText: string) {
@@ -208,7 +217,17 @@ export class PestRoutesService {
 
   getRecurringFrequency(pdfText: string) {
     const recurringServiceText = this.getRecurringService(pdfText)
-    return recurringServiceText.split(' ')[0]
+    let recurringFrequency = ''
+
+    for (const pattern of RECURRING_FREQUENCY_PATTERNS) {
+      const match = recurringServiceText.match(pattern)
+
+      if (match) {
+        recurringFrequency = match[0]
+      }
+    }
+
+    return recurringFrequency
   }
 
   getContractLength(pdfText: string) {
