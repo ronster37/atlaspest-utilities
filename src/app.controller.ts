@@ -83,14 +83,18 @@ export class AppController {
     const arrayBuffer = await this.appService.getZohoRequestPDFArrayBuffer(
       requestDocument.request_id,
     )
+
+    // Update the stage before the pdf parsing
+    await this.appService.updateZohoDeal(deal.id, {
+      Stage: 'Proposal Sent',
+    })
+
     const proposalDetails = await this.pestRouteService.getProposalDetails(
       arrayBuffer,
     )
 
     this.logger.log('proposalDetails ' + JSON.stringify(proposalDetails))
-
     await this.appService.updateZohoDeal(deal.id, {
-      Stage: 'Proposal Sent',
       Service_Type: proposalDetails.serviceType,
       Initial_Price: proposalDetails.initialPrice,
       Contract_Length: proposalDetails.contractLength,
