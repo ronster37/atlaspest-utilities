@@ -4,6 +4,7 @@ import { ZohoGuard } from './auth/zoho.guard'
 import { PestRoutesService } from './pestRoutes.service'
 import { PrismaService } from './prisma.service'
 import { EmailService } from './email.service'
+import { DateTime } from 'luxon'
 
 @Controller()
 export class AppController {
@@ -108,6 +109,9 @@ export class AppController {
       Recurring_Frequency: proposalDetails.recurringFrequency,
       Multi_Unit_Property: proposalDetails.isMultiUnit,
       Unit_Quota_per_Service: proposalDetails.unitQuotaPerService,
+      Date_Proposal_Sent: DateTime.local()
+        .setZone('America/Denver')
+        .toFormat('yyyy-MM-dd'),
     })
   }
 
