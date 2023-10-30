@@ -1,5 +1,6 @@
 import { Body, Controller, Logger, Post, UseGuards } from '@nestjs/common'
 import { AppService } from './app.service'
+import axios, { AxiosError } from 'axios'
 import { ZohoGuard } from './auth/zoho.guard'
 import { PestRoutesService } from './pestRoutes.service'
 import { PrismaService } from './prisma.service'
@@ -23,6 +24,7 @@ export class AppController {
     this.logger.log('incoming webhookZohoAppointmentScheduled ' + body.dealId)
     this.logger.log(JSON.stringify(body))
 
+    try {
     const arcSiteProject = await this.appService.createArcSiteProject(body)
     await this.prisma.commercialSales.create({
       data: {
@@ -32,6 +34,39 @@ export class AppController {
       },
     })
     await this.appService.updateArcSiteProject(arcSiteProject.id, body)
+    } catch (error) {
+      // If it is a duplicate project name error, send an email to the sales rep
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError
+        if (axiosError.response?.status === 400) {
+          const data: any = axiosError.response.data
+
+          if ('message' in data) {
+            const message: string = data.message
+
+            if (message.includes('project name already exists')) {
+              await this.emailService.send({
+                to: body.salesRep.email,
+                subject: `Duplicate ArcSite project for ${
+                  body.company
+                } @ ${new Date().toISOString()}`,
+                text: `Duplicate ArcSite project for ${body.company}`,
+              })
+            } else {
+              throw error
+            }
+          } else {
+            throw error
+          }
+        } else {
+          // If it's not a 400 error, rethrow the error
+          throw error
+        }
+      } else {
+        // If it's not an Axios error, rethrow the error
+        throw error
+      }
+    }
   }
 
   @Post('arc-site/proposal-signed')
