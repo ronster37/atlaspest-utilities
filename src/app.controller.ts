@@ -78,6 +78,8 @@ export class AppController {
       contact.Full_Name,
       contact.Email,
       requestDocument.document_ids[0].total_pages - 1,
+      `${project.sales_rep.firstName} ${project.sales_rep.lastName}`,
+      project.sales_rep.email,
     )
     await this.appService.sendForSignature(requestDocument.request_id)
 

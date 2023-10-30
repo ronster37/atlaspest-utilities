@@ -291,6 +291,8 @@ ${project.sales_rep.phone}`
     name: string,
     email: string,
     lastPageIndex: number,
+    salesRepName: string,
+    salesRepEmail: string,
   ) {
     const url = `${this.configService.get(
       'ZOHO_SIGN_URL',
@@ -369,6 +371,16 @@ ${project.sales_rep.phone}`
                 page_no: lastPageIndex,
               },
             ],
+          },
+          {
+            verify_recipient: false,
+            action_type: 'VIEW',
+            signing_order: 1,
+            private_notes: '',
+            recipient_email: salesRepEmail,
+            send_completed_document: true,
+            recipient_name: salesRepName,
+            delivery_mode: 'EMAIL',
           },
         ],
       },
