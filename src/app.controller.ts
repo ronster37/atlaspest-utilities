@@ -238,7 +238,6 @@ Initial Price: ${proposalDetails.initialPrice}
 Recurring Price: ${proposalDetails.recurringPrice}
 Recurring Frequency: ${proposalDetails.recurringFrequency}
 Contract Length: ${proposalDetails.contractLength}
-Multi Unit Property: ${proposalDetails.isMultiUnit ? 'Yes' : 'No'}
 Unit Quota per Service: ${proposalDetails.unitQuotaPerService}
 Additional Service Information: ${proposalDetails.additionalServiceInformation}
 
