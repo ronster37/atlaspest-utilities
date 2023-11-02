@@ -218,10 +218,13 @@ export class AppController {
     )
 
     if (proposalDetails.additionalServiceInformation) {
-      await this.pestRouteService.createRedNote(
-        customerId,
-        proposalDetails.additionalServiceInformation,
-      )
+      let redNote = proposalDetails.additionalServiceInformation
+
+      if (proposalDetails.unitQuotaPerService) {
+        redNote += `\n\nUnit Quota per Service: ${proposalDetails.unitQuotaPerService}`
+      }
+
+      await this.pestRouteService.createRedNote(customerId, redNote)
     }
 
     await this.appService.updateZohoDeal(zohoDealId, {
