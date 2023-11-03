@@ -6,6 +6,13 @@ import { PrismaService } from './prisma.service'
 
 type Stage = 'Appt Scheduled' | 'Proposal Sent' | 'Sold'
 
+interface ZohoSignSalesRepToken {
+  email: string
+  clientId: string
+  clientSecret: string
+  refreshToken: string
+}
+
 interface UpdateZohoDealStage {
   Stage: Stage
 }
@@ -26,83 +33,102 @@ interface UpdateZohoDealProposalDetails {
 @Injectable()
 export class AppService {
   private zohoAxiosInstance: AxiosInstance
+  private salesRepZohoAxiosInstances: Record<string, AxiosInstance> = {}
   private readonly ZOHO_ACCESS_TOKEN_KEY = 'zoho_access_token'
 
   constructor(
     private configService: ConfigService,
     private readonly prisma: PrismaService,
   ) {
-    this.zohoAxiosInstance = axios.create()
-
-    this.zohoAxiosInstance.interceptors.request.use(
-      async (config) => {
-        const accessToken = await this.getAccessToken()
-        config.headers.Authorization = `Zoho-oauthtoken ${accessToken}`
-        return config
-      },
-      (error) => Promise.reject(error),
+    const salesRepsTokens: ZohoSignSalesRepToken[] = JSON.parse(
+      this.configService.get<string>('ZOHO_SIGN_SALES_REP_TOKENS'),
     )
 
-    this.zohoAxiosInstance.interceptors.response.use(
-      (response) => {
-        return response
-      },
-      async (error) => {
-        const originalRequest = error.config
+    console.log(salesRepsTokens)
 
-        if (error.response.status === 401 && !originalRequest._retry) {
-          originalRequest._retry = true
-          const access_token = await this.refreshAccessToken()
-          originalRequest.headers.Authorization = `Zoho-oauthtoken ${access_token}`
+    for (const salesRepsToken of salesRepsTokens) {
+      const zohoAxiosInstance = axios.create()
+      const zohoAccessTokenKey = `zoho_access_token_${salesRepsToken.email}`
 
-          return axios(originalRequest)
-        }
+      const getAccessToken = async () => {
+        const globalSetting = await this.prisma.globalSettings.findUnique({
+          where: {
+            key: zohoAccessTokenKey,
+          },
+        })
 
-        return Promise.reject(error)
-      },
-    )
-  }
+        return globalSetting?.value
+      }
 
-  async getAccessToken() {
-    const globalSetting = await this.prisma.globalSettings.findUnique({
-      where: {
-        key: this.ZOHO_ACCESS_TOKEN_KEY,
-      },
-    })
+      const refreshAccessToken = async () => {
+        const url = 'https://accounts.zoho.com/oauth/v2/token'
 
-    return globalSetting?.value
-  }
+        const response = await axios.post<ZohoRefreshAccessTokenResponse>(
+          url,
+          {},
+          {
+            params: {
+              refresh_token: salesRepsToken.refreshToken,
+              client_id: salesRepsToken.clientId,
+              client_secret: salesRepsToken.clientSecret,
+              grant_type: 'refresh_token',
+            },
+          },
+        )
 
-  async refreshAccessToken() {
-    const url = 'https://accounts.zoho.com/oauth/v2/token'
+        await this.prisma.globalSettings.upsert({
+          where: {
+            key: zohoAccessTokenKey,
+          },
+          update: {
+            value: response.data.access_token,
+          },
+          create: {
+            key: zohoAccessTokenKey,
+            value: response.data.access_token,
+          },
+        })
 
-    const response = await axios.post<ZohoRefreshAccessTokenResponse>(
-      url,
-      {},
-      {
-        params: {
-          refresh_token: this.configService.get('ZOHO_REFRESH_TOKEN'),
-          client_id: this.configService.get('ZOHO_CLIENT_ID'),
-          client_secret: this.configService.get('ZOHO_CLIENT_SECRET'),
-          grant_type: 'refresh_token',
+        return response.data.access_token
+      }
+
+      zohoAxiosInstance.interceptors.request.use(
+        async (config) => {
+          const accessToken = await getAccessToken()
+          config.headers.Authorization = `Zoho-oauthtoken ${accessToken}`
+          return config
         },
-      },
-    )
+        (error) => Promise.reject(error),
+      )
 
-    await this.prisma.globalSettings.upsert({
-      where: {
-        key: this.ZOHO_ACCESS_TOKEN_KEY,
-      },
-      update: {
-        value: response.data.access_token,
-      },
-      create: {
-        key: this.ZOHO_ACCESS_TOKEN_KEY,
-        value: response.data.access_token,
-      },
-    })
+      zohoAxiosInstance.interceptors.response.use(
+        (response) => {
+          return response
+        },
+        async (error) => {
+          const originalRequest = error.config
 
-    return response.data.access_token
+          if (error.response.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true
+            const access_token = await refreshAccessToken()
+            originalRequest.headers.Authorization = `Zoho-oauthtoken ${access_token}`
+
+            return axios(originalRequest)
+          }
+
+          return Promise.reject(error)
+        },
+      )
+
+      this.salesRepZohoAxiosInstances[salesRepsToken.email] = zohoAxiosInstance
+
+      // This will be the default axios instance used
+      console.log('salesRepsToken.email', salesRepsToken.email)
+      if (salesRepsToken.email === 'office@atlaspest.com') {
+        this.zohoAxiosInstance = zohoAxiosInstance
+        console.log('salesRepsToken.email', salesRepsToken.email)
+      }
+    }
   }
 
   async createArcSiteProject(body: ZohoDealPayload) {
@@ -271,16 +297,19 @@ ${project.sales_rep.phone}`
     formData.append('file', pdfResponse.data, 'proposal.pdf')
     formData.append('data', JSON.stringify(requestData))
 
-    const response =
-      await this.zohoAxiosInstance.post<ZohoCreateDocumentResponse>(
-        url,
-        formData,
-        {
-          headers: {
-            ...formData.getHeaders(),
-          },
+    const zohoAxiosInstance =
+      this.salesRepZohoAxiosInstances[project.sales_rep.email.toLowerCase()] ||
+      this.zohoAxiosInstance
+
+    const response = await zohoAxiosInstance.post<ZohoCreateDocumentResponse>(
+      url,
+      formData,
+      {
+        headers: {
+          ...formData.getHeaders(),
         },
-      )
+      },
+    )
 
     // TODO: check if response is ok
     return response.data.requests
@@ -292,7 +321,6 @@ ${project.sales_rep.phone}`
     name: string,
     email: string,
     lastPageIndex: number,
-    salesRepName: string,
     salesRepEmail: string,
   ) {
     const url = `${this.configService.get(
@@ -373,16 +401,6 @@ ${project.sales_rep.phone}`
               },
             ],
           },
-          {
-            verify_recipient: false,
-            action_type: 'VIEW',
-            signing_order: 1,
-            private_notes: '',
-            recipient_email: salesRepEmail,
-            send_completed_document: true,
-            recipient_name: salesRepName,
-            delivery_mode: 'EMAIL',
-          },
         ],
       },
     }
@@ -390,18 +408,24 @@ ${project.sales_rep.phone}`
     const formData = new FormData()
     formData.append('data', JSON.stringify(requestData))
 
-    return this.zohoAxiosInstance.put(url, formData, {
+    const zohoAxiosInstance =
+      this.salesRepZohoAxiosInstances[salesRepEmail] || this.zohoAxiosInstance
+
+    return zohoAxiosInstance.put(url, formData, {
       headers: {
         ...formData.getHeaders(),
       },
     })
   }
 
-  sendForSignature(request_id: string) {
+  sendForSignature(request_id: string, salesRepEmail: string) {
     const url = `${this.configService.get(
       'ZOHO_SIGN_URL',
     )}/requests/${request_id}/submit`
 
-    return this.zohoAxiosInstance.post(url, null)
+    const zohoAxiosInstance =
+      this.salesRepZohoAxiosInstances[salesRepEmail] || this.zohoAxiosInstance
+
+    return zohoAxiosInstance.post(url, null)
   }
 }

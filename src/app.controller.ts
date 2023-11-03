@@ -92,6 +92,7 @@ export class AppController {
     const contact = await this.appService.getZohoContact(zohoContactId)
     const deal = await this.appService.getZohoDeal(zohoDealId)
     const project = await this.appService.getArcSiteProject(project_id)
+    const salesRepEmail = project.sales_rep.email.toLowerCase()
 
     const requestDocument = await this.appService.createZohoDocument(
       contact,
@@ -114,10 +115,12 @@ export class AppController {
       contact.Full_Name,
       contact.Email,
       requestDocument.document_ids[0].total_pages - 1,
-      `${project.sales_rep.firstName} ${project.sales_rep.lastName}`,
-      project.sales_rep.email,
+      salesRepEmail,
     )
-    await this.appService.sendForSignature(requestDocument.request_id)
+    await this.appService.sendForSignature(
+      requestDocument.request_id,
+      salesRepEmail,
+    )
 
     const arrayBuffer = await this.appService.getZohoRequestPDFArrayBuffer(
       requestDocument.request_id,
