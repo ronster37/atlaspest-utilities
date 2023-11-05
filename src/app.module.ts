@@ -9,6 +9,7 @@ import { ZohoService } from './zoho.service'
 import { EmailService } from './email.service'
 import { APP_FILTER } from '@nestjs/core'
 import { SentryFilter } from './sentry.filter'
+import { TasksService } from './tasks/tasks.service';
 
 @Module({
   imports: [ConfigModule.forRoot(), AuthModule],
@@ -23,6 +24,7 @@ import { SentryFilter } from './sentry.filter'
       provide: APP_FILTER,
       useClass: SentryFilter,
     },
+    TasksService,
   ],
 })
 export class AppModule {}
