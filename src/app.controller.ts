@@ -25,15 +25,15 @@ export class AppController {
     this.logger.log(JSON.stringify(body))
 
     try {
-    const arcSiteProject = await this.appService.createArcSiteProject(body)
-    await this.prisma.commercialSales.create({
-      data: {
-        zohoDealId: body.dealId,
-        zohoContactId: body.contactId,
-        arcSiteProjectId: arcSiteProject.id,
-      },
-    })
-    await this.appService.updateArcSiteProject(arcSiteProject.id, body)
+      const arcSiteProject = await this.appService.createArcSiteProject(body)
+      await this.prisma.commercialSales.create({
+        data: {
+          zohoDealId: body.dealId,
+          zohoContactId: body.contactId,
+          arcSiteProjectId: arcSiteProject.id,
+        },
+      })
+      await this.appService.updateArcSiteProject(arcSiteProject.id, body)
     } catch (error) {
       // If it is a duplicate project name error, send an email to the sales rep
       if (axios.isAxiosError(error)) {
