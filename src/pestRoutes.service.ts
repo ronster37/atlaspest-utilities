@@ -9,6 +9,7 @@ import * as os from 'os'
 import * as pdf from 'pdf-parse'
 import { DateTime } from 'luxon'
 import * as currency from 'currency.js'
+import { AxiosCacheInstance, setupCache } from 'axios-cache-interceptor'
 
 const IS_TEXT = 'Initial Service'
 const RS_TEXT = 'Recurring Services'
@@ -38,7 +39,21 @@ const RECURRING_FREQUENCY_PATTERNS = FREQUENCIES_AND_MULTIPLIERS.map(
 
 @Injectable()
 export class PestRoutesService {
-  constructor(private configService: ConfigService) {}
+  private pestRoutesAxiosInstance: AxiosCacheInstance
+
+  constructor(private configService: ConfigService) {
+    const axiosInstance = axios.create({
+      baseURL: this.configService.get('PESTROUTES_URL'),
+      params: {
+        authenticationToken: this.configService.get('PESTROUTES_AUTH_TOKEN'),
+        authenticationKey: this.configService.get('PESTROUTES_AUTH_KEY'),
+      },
+    })
+    this.pestRoutesAxiosInstance = setupCache(axiosInstance, {
+      debug: console.log,
+      headerInterpreter: () => 300,
+    })
+  }
 
   async createCustomer(
     zohoContact: ZohoContact,
@@ -69,7 +84,7 @@ export class PestRoutesService {
       sourceID: 14,
       status: 1,
     }
-    const response = await axios.post<PestRoutesCustomerCreateResponse>(
+    const response = await axios.post<PestRoutesPostCustomerResponse>(
       url,
       requestData,
       this.getAuthorization(),
@@ -283,6 +298,57 @@ export class PestRoutesService {
     }
 
     await axios.post(url, requestData, this.getAuthorization())
+  }
+
+  async getAppointmentsByDate(date: string) {
+    const result =
+      await this.pestRoutesAxiosInstance.get<PestRoutesGetAppointmentsResponse>(
+        '/appointment/search',
+        {
+          params: {
+            date,
+          },
+        },
+      )
+
+    return result.data
+  }
+
+  async getAppointmentById(id: number) {
+    const result =
+      await this.pestRoutesAxiosInstance.get<PestRoutesGetAppointmentResponse>(
+        `/appointment/${id}`,
+      )
+
+    return result.data
+  }
+
+  async getRouteById(id: string) {
+    const result =
+      await this.pestRoutesAxiosInstance.get<PestRoutesGetRouteResponse>(
+        `/route/${id}`,
+      )
+
+    return result.data
+  }
+
+  async getEmployeeById(id: string) {
+    const result =
+      await this.pestRoutesAxiosInstance.get<PestRoutesGetEmployeeResponse>(
+        `/employee/${id}`,
+      )
+
+    return result.data
+  }
+
+  async getCustomerById(id: string) {
+    const result =
+      await this.pestRoutesAxiosInstance.get<PestRoutesGetCustomerResponse>(
+        `/customer/${id}`,
+      )
+
+    console.log(result.cached)
+    return result.data
   }
 
   async uploadProposal(

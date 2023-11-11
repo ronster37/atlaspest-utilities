@@ -44,8 +44,6 @@ export class AppService {
       this.configService.get<string>('ZOHO_SIGN_SALES_REP_TOKENS'),
     )
 
-    console.log(salesRepsTokens)
-
     for (const salesRepsToken of salesRepsTokens) {
       const zohoAxiosInstance = axios.create()
       const zohoAccessTokenKey = `zoho_access_token_${salesRepsToken.email}`
@@ -123,10 +121,8 @@ export class AppService {
       this.salesRepZohoAxiosInstances[salesRepsToken.email] = zohoAxiosInstance
 
       // This will be the default axios instance used
-      console.log('salesRepsToken.email', salesRepsToken.email)
       if (salesRepsToken.email === 'office@atlaspest.com') {
         this.zohoAxiosInstance = zohoAxiosInstance
-        console.log('salesRepsToken.email', salesRepsToken.email)
       }
     }
   }
