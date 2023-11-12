@@ -347,7 +347,6 @@ export class PestRoutesService {
         `/customer/${id}`,
       )
 
-    console.log(result.cached)
     return result.data
   }
 
