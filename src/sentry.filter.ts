@@ -25,6 +25,13 @@ export class SentryFilter extends BaseExceptionFilter {
     let text = `Body:\n${body}`
 
     if (exception && exception.isAxiosError) {
+      try {
+        this.logger.error(`Error config url: ${exception.config.url}`)
+        this.logger.error(`Status Code: ${exception?.response?.status}`)
+      } catch (e) {
+        this.logger.error(e)
+      }
+
       if (exception.response && exception.response.data) {
         try {
           this.logger.error(exception.config.url)
