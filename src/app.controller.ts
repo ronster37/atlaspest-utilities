@@ -1,4 +1,4 @@
-import { Body, Controller, Logger, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Logger, Post, UseGuards } from '@nestjs/common'
 import { AppService } from './app.service'
 import axios, { AxiosError } from 'axios'
 import { ZohoGuard } from './auth/zoho.guard'
