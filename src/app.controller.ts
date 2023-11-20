@@ -252,8 +252,9 @@ Please set up subscription.
     })
   }
 
-  @Post('test')
-  async test(@Body() body: ArcSiteProposalSignedPayload) {
-    this.logger.log(JSON.stringify(body))
+  @Get('timeout')
+  async getTimeout() {
+    await new Promise((resolve) => setTimeout(resolve, 5000))
+    return 'ok'
   }
 }
