@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Logger, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Logger, Post, UseGuards } from '@nestjs/common'
 import { AppService } from './app.service'
 import axios, { AxiosError } from 'axios'
 import { ZohoGuard } from './auth/zoho.guard'
@@ -250,11 +250,5 @@ Additional Service Information: ${proposalDetails.additionalServiceInformation}
 Please set up subscription.
 `,
     })
-  }
-
-  @Get('timeout')
-  async getTimeout() {
-    await new Promise((resolve) => setTimeout(resolve, 5000))
-    return 'ok'
   }
 }
