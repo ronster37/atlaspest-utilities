@@ -149,7 +149,9 @@ export class BonjoroService {
   }
 
   async findUserByEmail(email: string, users: BonjoroUser[]) {
-    const user = users.find((user) => user.email === email)
+    const user = users.find(
+      (user) => user.email.toLowerCase() === email.toLowerCase(),
+    )
 
     if (!user) {
       const warningMessage = 'No Bonjoro user found for email: ' + email
