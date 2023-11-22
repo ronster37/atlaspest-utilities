@@ -23,11 +23,16 @@ export class SentryFilter extends BaseExceptionFilter {
     const url = request.url
     const body = JSON.stringify(request.body, null, 2)
     let text = `Body:\n${body}`
+    let axiosUrl = ''
+    let axiosStatus = undefined
 
     if (exception && exception.isAxiosError) {
       try {
-        this.logger.error(`Error config url: ${exception.config.url}`)
-        this.logger.error(`Status Code: ${exception?.response?.status}`)
+        axiosUrl = exception.config.url
+        axiosStatus = exception?.response?.status
+
+        this.logger.error(`Error config url: ${axiosUrl}`)
+        this.logger.error(`Status Code: ${axiosStatus}`)
       } catch (e) {
         this.logger.error(e)
       }
@@ -51,10 +56,17 @@ export class SentryFilter extends BaseExceptionFilter {
       this.logger.log('Not Axios error')
     }
 
-    await this.emailService.send({
-      subject: `Error on webhook ${url} @ ${new Date().toISOString()}`,
-      text: text,
-    })
+    if (
+      axiosUrl === 'https://sign.zoho.com/api/v1/requests' &&
+      axiosStatus === undefined
+    ) {
+      // Do nothing for now. This is 503 error from Zoho Sign that we will supress.
+    } else {
+      await this.emailService.send({
+        subject: `Error on webhook ${url} @ ${new Date().toISOString()}`,
+        text: text,
+      })
+    }
 
     Sentry.captureException(exception)
     super.handleUnknownError(exception, host, applicationRef)
