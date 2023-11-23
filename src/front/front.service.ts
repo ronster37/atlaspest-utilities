@@ -20,16 +20,20 @@ export class FrontService {
   }
 
   async getTemplate() {
+    const messageTemplateId = this.configService.get<string>(
+      'FRONT_MESSAGE_TEMPLATE_ID',
+    )
     const response =
       await this.frontAxiosInstance.get<GetFrontTemplateResponse>(
-        '/message_templates/rsp_mtjrm',
+        `/message_templates/${messageTemplateId}`,
       )
 
     return response.data.body
   }
 
   sendMessage(to: string, body: string) {
-    return this.frontAxiosInstance.post('/channels/cha_ap76a/messages', {
+    const channelId = this.configService.get<string>('FRONT_CHANNEL_ID')
+    return this.frontAxiosInstance.post(`/channels/${channelId}/messages`, {
       to: [to],
       options: {
         archive: true,
