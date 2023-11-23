@@ -156,7 +156,7 @@ export class BonjoroService {
           sync: 0,
           lines: [
             {
-              email: customer.email,
+              email: this.getAutomationEmail(appointment.customerID),
               first_name: customer.fname,
               last_name: customer.lname,
               reason: `Service at ${customer.address}, ${customer.city}, ${customer.state} ${customer.zip}`,
@@ -165,7 +165,7 @@ export class BonjoroService {
         }
       } else {
         greets[bonjoroUserId].lines.push({
-          email: customer.email,
+          email: this.getAutomationEmail(appointment.customerID),
           first_name: customer.fname,
           last_name: customer.lname,
           reason: `Service at ${customer.address}, ${customer.city}, ${customer.state} ${customer.zip}`,
@@ -232,27 +232,35 @@ export class BonjoroService {
     return this.bonjoroAxiosInstance.put(`/greets/${greetId}`, data)
   }
 
-  // Finds the Greet associated with the cancelled PestRoutes appointment and
-  // deletes it
+  // Find the Greet associated with the cancelled PestRoutes appointment and delete it
   async cancelAppointment(appointmentId: number) {
     const { appointment } = await this.pestRoutesService.getAppointmentById(
       appointmentId,
     )
-    const { customer } = await this.pestRoutesService.getCustomerById(
-      appointment.customerID,
-    )
 
     const { data: greets } = await this.getGreetsWithFilter({
       status: 'open',
-      search: customer.email,
+      search: this.getAutomationEmail(appointment.customerID),
     })
 
     if (greets.length > 1) {
-      // Send error
+      this.logger.error(
+        `Found more than 1 greet for appointment ${appointmentId} and ${this.getAutomationEmail(
+          appointment.customerID,
+        )}`,
+      )
     } else if (greets.length == 0) {
-      // Do nothing
+      this.logger.error(
+        `Found 0 greets for appointment ${appointmentId} and ${this.getAutomationEmail(
+          appointment.customerID,
+        )}`,
+      )
     } else {
       await this.deleteGreets(greets.map((greet) => greet.id))
     }
+  }
+
+  getAutomationEmail(id: string) {
+    return `automation+${id}@atlaspest.com`
   }
 }

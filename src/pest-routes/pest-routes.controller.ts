@@ -45,7 +45,9 @@ export class PestRoutesController {
         sync: 0,
         lines: [
           {
-            email: customer.email,
+            email: this.bonjoroService.getAutomationEmail(
+              appointment.customerID,
+            ),
             first_name: customer.fname,
             last_name: customer.lname,
             reason: `Service at ${customer.address}, ${customer.city}, ${customer.state} ${customer.zip}`,
@@ -53,8 +55,6 @@ export class PestRoutesController {
         ],
       })
     }
-
-    return date
   }
 
   @Get('/appointments/:id/rescheduled')
@@ -75,13 +75,23 @@ export class PestRoutesController {
       )
       const { data: greets } = await this.bonjoroService.getGreetsWithFilter({
         status: 'open',
-        search: customer.email,
+        search: this.bonjoroService.getAutomationEmail(appointment.customerID),
       })
 
       if (greets.length > 1) {
         // Throw an error
+        this.logger.error(
+          `Found more than 1 greets for appointment '${id}' and email ${this.bonjoroService.getAutomationEmail(
+            appointment.customerID,
+          )}`,
+        )
       } else if (greets.length == 0) {
         // Throw an error?
+        this.logger.error(
+          `Found 0 greets for appointment '${id}' and email ${this.bonjoroService.getAutomationEmail(
+            appointment.customerID,
+          )}`,
+        )
       }
 
       const greet = greets[0]
