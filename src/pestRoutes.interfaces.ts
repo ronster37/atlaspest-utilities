@@ -11,8 +11,9 @@ interface PestRoutesGetAppointmentsResponse {
 interface PestRoutesGetAppointmentResponse {
   appointment: {
     customerID: string
-    routeID: string
+    date: string
     employeeID: string
+    routeID: string
   }
 }
 

@@ -6,6 +6,15 @@ import { ConfigService } from '@nestjs/config'
 import { PestRoutesService } from 'src/pestRoutes.service'
 import { EmailService } from 'src/email.service'
 
+interface GetGreetsParams {
+  status?: 'open'
+  search?: string
+}
+
+interface PutGreetRequest {
+  assignee_id: string
+}
+
 @Injectable()
 export class BonjoroService {
   private readonly logger = new Logger(BonjoroService.name)
@@ -81,6 +90,29 @@ export class BonjoroService {
     >(path)
 
     return result.data
+  }
+
+  async getGreetsWithFilter(params: GetGreetsParams = {}) {
+    const path = '/greets?status=open'
+    const result = await this.bonjoroAxiosInstance.get<
+      BonjoroGetResponse<BonjoroGreet>
+    >(path, {
+      params,
+    })
+
+    return result.data
+  }
+
+  async getAllGreets() {
+    const greets = await this.getAll(async (url?: string) =>
+      this.getGreets(url),
+    )
+
+    return greets.filter(
+      (greet) =>
+        greet.campaign.uuid ===
+        this.configService.get<string>('BONJORO_CAMPAIGN_ID'),
+    )
   }
 
   async createGreets() {
@@ -180,15 +212,47 @@ export class BonjoroService {
     return result.data
   }
 
+  async getAllUsers() {
+    return await this.getAll(async (url?: string) => this.getUsers(url))
+  }
+
   async createBulkGreets(greets: BonjoroBulkCreateGreetRequest) {
     await this.bonjoroAxiosInstance.post('/greets/create', greets)
   }
 
-  async deleteGreets(greets: string[]) {
-    await this.bonjoroAxiosInstance.delete('/greets', {
+  deleteGreets(greetIds: string[]) {
+    return this.bonjoroAxiosInstance.delete('/greets', {
       data: {
-        greets,
+        greets: greetIds,
       },
     })
+  }
+
+  putGreet(greetId: string, data: PutGreetRequest) {
+    return this.bonjoroAxiosInstance.put(`/greets/${greetId}`, data)
+  }
+
+  // Finds the Greet associated with the cancelled PestRoutes appointment and
+  // deletes it
+  async cancelAppointment(appointmentId: number) {
+    const { appointment } = await this.pestRoutesService.getAppointmentById(
+      appointmentId,
+    )
+    const { customer } = await this.pestRoutesService.getCustomerById(
+      appointment.customerID,
+    )
+
+    const { data: greets } = await this.getGreetsWithFilter({
+      status: 'open',
+      search: customer.email,
+    })
+
+    if (greets.length > 1) {
+      // Send error
+    } else if (greets.length == 0) {
+      // Do nothing
+    } else {
+      await this.deleteGreets(greets.map((greet) => greet.id))
+    }
   }
 }
