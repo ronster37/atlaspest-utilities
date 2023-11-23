@@ -12,10 +12,12 @@ import { SentryFilter } from './sentry.filter'
 import { BonjoroService } from './bonjoro/bonjoro.service'
 import { ScheduleModule } from '@nestjs/schedule'
 import { PestRoutesController } from './pest-routes/pest-routes.controller'
+import { BonjoroController } from './bonjoro/bonjoro.controller'
+import { FrontService } from './front/front.service'
 
 @Module({
   imports: [ConfigModule.forRoot(), AuthModule, ScheduleModule.forRoot()],
-  controllers: [AppController, PestRoutesController],
+  controllers: [AppController, PestRoutesController, BonjoroController],
   providers: [
     AppService,
     PestRoutesService,
@@ -27,6 +29,7 @@ import { PestRoutesController } from './pest-routes/pest-routes.controller'
       useClass: SentryFilter,
     },
     BonjoroService,
+    FrontService,
   ],
 })
 export class AppModule {}

@@ -1,0 +1,3 @@
+interface GetFrontTemplateResponse {
+  body: string
+}

@@ -33,3 +33,14 @@ interface BonjoroBulkCreateGreetRequest {
     },
   ]
 }
+
+interface BonjoroCompletedGreetPayload {
+  object: {
+    data: {
+      profile: {
+        email: string
+      }
+      url: string
+    }
+  }
+}
