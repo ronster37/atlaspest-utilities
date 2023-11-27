@@ -34,7 +34,7 @@ export class BonjoroController {
         .replace('{{customer.first_name}}', `${customer.fname}`)
         .replace('{{link}}', videoUrl)
 
-      await this.frontService.sendMessage('5592707693', textTemplate)
+      await this.frontService.sendMessage(customer.phone1, textTemplate)
     }
   }
 }
