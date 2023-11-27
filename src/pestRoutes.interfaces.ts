@@ -32,6 +32,8 @@ interface PestRoutesGetEmployeeResponse {
 interface PestRoutesGetCustomerResponse {
   customer: {
     email: string
+    phone1: string
+    phone2: string | null
     fname: string
     lname: string
     companyName: string
