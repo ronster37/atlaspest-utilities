@@ -350,6 +350,30 @@ export class PestRoutesService {
     return result.data
   }
 
+  async getChangelogIds(classId: number, dateChanged: string) {
+    const result =
+      await this.pestRoutesAxiosInstance.get<PestRoutesGetChangelogResponse>(
+        `/changelog/search`,
+        {
+          params: {
+            classID: classId,
+            dateChanged,
+          },
+        },
+      )
+
+    return result.data
+  }
+
+  async getSingleChangelog(id: number) {
+    const result =
+      await this.pestRoutesAxiosInstance.get<PestRoutesGetSingleChangelogResponse>(
+        `/changelog/${id}`,
+      )
+
+    return result.data
+  }
+
   async uploadProposal(
     arrayBuffer: ArrayBuffer,
     customerId: string,

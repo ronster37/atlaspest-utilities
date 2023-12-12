@@ -14,6 +14,8 @@ import { ScheduleModule } from '@nestjs/schedule'
 import { PestRoutesController } from './pest-routes/pest-routes.controller'
 import { BonjoroController } from './bonjoro/bonjoro.controller'
 import { FrontService } from './front/front.service'
+import { GreetManagerService } from './pest-routes/greet-manager.service'
+import { ChangelogSearchService } from './pest-routes/log-search.service'
 
 @Module({
   imports: [ConfigModule.forRoot(), AuthModule, ScheduleModule.forRoot()],
@@ -30,6 +32,8 @@ import { FrontService } from './front/front.service'
     },
     BonjoroService,
     FrontService,
+    GreetManagerService,
+    ChangelogSearchService,
   ],
 })
 export class AppModule {}

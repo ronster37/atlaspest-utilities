@@ -43,3 +43,19 @@ interface PestRoutesGetCustomerResponse {
     zip: string
   }
 }
+
+interface PestRoutesGetChangelogResponse {
+  changelogIDs: number[]
+}
+
+interface PestRoutesGetSingleChangelogResponse {
+  changelog: {
+    changeID: string
+    classID: string
+    class: string
+    dateChanged: string // Format: "2023-12-06 01:49:20"
+    employeeID: string
+    notes: string // JSON format
+    referenceID: string // appointment id
+  }
+}
