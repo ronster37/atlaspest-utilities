@@ -13,9 +13,11 @@ interface ZohoSignSalesRepToken {
   refreshToken: string
 }
 
-interface UpdateZohoDealStage {
-  Stage: Stage
+interface UpdateZohoDeal {
+  Stage?: Stage
+  Pest_Routes_ID?: string
 }
+
 interface UpdateZohoDealProposalDetails {
   Stage?: Stage
   Service_Type: string
@@ -222,7 +224,7 @@ export class AppService {
 
   updateZohoDeal(
     id: string,
-    data: UpdateZohoDealProposalDetails | UpdateZohoDealStage,
+    data: UpdateZohoDealProposalDetails | UpdateZohoDeal,
   ) {
     const url = `${this.configService.get('ZOHO_URL')}/Deals/${id}`
     return this.zohoAxiosInstance.put(url, {

@@ -102,6 +102,8 @@ interface ZohoDeal {
   Deal_Name: string
   Stage: string
   Contact_Name: Contact
+  Is_this_an_upsell: boolean
+  Pest_Routes_ID: string
 }
 
 interface Owner {

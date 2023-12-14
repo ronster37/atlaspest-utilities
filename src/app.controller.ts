@@ -180,6 +180,12 @@ export class AppController {
     const arrayBuffer = await this.appService.getZohoRequestPDFArrayBuffer(
       requestId,
     )
+    let customerId: string
+
+    // If it's an upsell reuse the existing PR customer
+    if (zohoDeal.Is_this_an_upsell) {
+      customerId = zohoDeal.Pest_Routes_ID
+    } else {
     const pestRouteCustomerCreateResponse =
       await this.pestRouteService.createCustomer(
         zohoContact,
@@ -187,7 +193,8 @@ export class AppController {
         arcSiteProject,
         arrayBuffer,
       )
-    const customerId = pestRouteCustomerCreateResponse.result
+      customerId = pestRouteCustomerCreateResponse.result
+    }
 
     // Once the customer is created, update the commercial sale with the pestRoutesCustomerId
     await this.prisma.commercialSales.update({
@@ -197,11 +204,14 @@ export class AppController {
       },
     })
 
+    // Skip this step for upsells
+    if (zohoDeal.Is_this_an_upsell) {
     await this.pestRouteService.createAdditionalContactIfSecondEmailOrPhoneExists(
       customerId,
       zohoContact,
       arcSiteProject,
     )
+    }
 
     await this.pestRouteService.uploadProposal(
       arrayBuffer,
@@ -232,6 +242,7 @@ export class AppController {
 
     await this.appService.updateZohoDeal(zohoDealId, {
       Stage: 'Sold',
+      Pest_Routes_ID: customerId,
     })
     // TODO: Add requested start date
     await this.emailService.send({
