@@ -6,6 +6,7 @@ import { DateTime } from 'luxon'
 import { GreetManagerService } from './greet-manager.service'
 import { AppService } from 'src/app.service'
 import { PrismaService } from 'src/prisma.service'
+import { EmailService } from 'src/email.service'
 
 @Controller('pest-routes')
 export class PestRoutesController {
@@ -18,6 +19,7 @@ export class PestRoutesController {
     private greetManagerService: GreetManagerService,
     private appService: AppService,
     private prisma: PrismaService,
+    private readonly emailService: EmailService,
   ) {}
 
   @Get('/appointments/:id/scheduled')
@@ -72,5 +74,59 @@ export class PestRoutesController {
   async appointmentCancelled(@Param('id') id: number) {
     this.logger.log(`${this.appointmentCancelled.name} ${id}`)
     await this.bonjoroService.cancelAppointment(id)
+  }
+
+  @Get('/appointments/:id/completed')
+  async appointmentCompleted(@Param('id') id: number) {
+    const { appointment } = await this.pestRoutesService.getAppointmentById(id)
+    const commercialSales = await this.prisma.commercialSales.findMany({
+      where: {
+        pestRoutesCustomerId: Number(appointment.customerID),
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    })
+
+    if (!commercialSales.length) {
+      // Do nothing, because we only care about items that went through the Zoho flow
+    } else {
+      let countSold = 0
+      for (const commercialSale of commercialSales) {
+        const zohoDeal = await this.appService.getZohoDeal(
+          commercialSale.zohoDealId,
+        )
+
+        if (zohoDeal.Stage === 'Sold') {
+          countSold++
+        }
+      }
+
+      if (countSold > 1) {
+        await this.emailService.send({
+          subject: `More than 1 deal in Sold Stage for PR Customer: ${
+            appointment.customerID
+          } @ ${new Date().toISOString()}`,
+          text:
+            'Could not change the stage to Sold-Serviced ' +
+            `because multiple deals found for PR Customer: ${appointment.customerID}.\n` +
+            `Error ecountered during incoming webhook for PR appointment complete: ${id}`,
+        })
+        return
+      }
+
+      for (const commercialSale of commercialSales) {
+        const zohoDeal = await this.appService.getZohoDeal(
+          commercialSale.zohoDealId,
+        )
+
+        if (zohoDeal.Stage === 'Sold') {
+          await this.appService.updateZohoDeal(zohoDeal.id, {
+            Stage: 'Sold-Serviced',
+          })
+          break
+        }
+      }
+    }
   }
 }

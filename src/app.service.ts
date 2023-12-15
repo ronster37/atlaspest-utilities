@@ -4,7 +4,7 @@ import axios, { AxiosInstance } from 'axios'
 import * as FormData from 'form-data'
 import { PrismaService } from './prisma.service'
 
-type Stage = 'Appt Scheduled' | 'Proposal Sent' | 'Sold'
+type Stage = 'Appt Scheduled' | 'Proposal Sent' | 'Sold' | 'Sold-Serviced'
 
 interface ZohoSignSalesRepToken {
   email: string
