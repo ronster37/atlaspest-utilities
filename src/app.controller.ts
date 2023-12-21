@@ -112,8 +112,9 @@ export class AppController {
     await this.appService.addFields(
       requestDocument.request_id,
       requestDocument.document_fields[0].document_id,
-      contact.Full_Name,
-      contact.Email,
+      deal.Contact_Name.name,
+      deal.Email,
+      deal.Phone,
       requestDocument.document_ids[0].total_pages - 1,
       salesRepEmail,
     )
@@ -186,13 +187,13 @@ export class AppController {
     if (zohoDeal.Is_this_an_upsell) {
       customerId = zohoDeal.Pest_Routes_ID
     } else {
-    const pestRouteCustomerCreateResponse =
-      await this.pestRouteService.createCustomer(
-        zohoContact,
-        zohoDeal,
-        arcSiteProject,
-        arrayBuffer,
-      )
+      const pestRouteCustomerCreateResponse =
+        await this.pestRouteService.createCustomer(
+          zohoContact,
+          zohoDeal,
+          arcSiteProject,
+          arrayBuffer,
+        )
       customerId = pestRouteCustomerCreateResponse.result
     }
 
@@ -206,11 +207,11 @@ export class AppController {
 
     // Skip this step for upsells
     if (zohoDeal.Is_this_an_upsell) {
-    await this.pestRouteService.createAdditionalContactIfSecondEmailOrPhoneExists(
-      customerId,
-      zohoContact,
-      arcSiteProject,
-    )
+      await this.pestRouteService.createAdditionalContactIfSecondEmailOrPhoneExists(
+        customerId,
+        zohoContact,
+        arcSiteProject,
+      )
     }
 
     await this.pestRouteService.uploadProposal(

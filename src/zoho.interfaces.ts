@@ -101,20 +101,19 @@ interface ZohoDeal {
   Currency: string
   Deal_Name: string
   Stage: string
-  Contact_Name: Contact
+  Contact_Name: {
+    id: string
+    name: string
+  }
   Is_this_an_upsell: boolean
   Pest_Routes_ID: string
+  Phone: string
 }
 
 interface Owner {
   id: string
   name: string
   email: string
-}
-
-interface Contact {
-  id: string
-  name: string
 }
 
 interface ZohoContactResponse {

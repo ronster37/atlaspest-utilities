@@ -318,6 +318,7 @@ ${project.sales_rep.phone}`
     document_id: string,
     name: string,
     email: string,
+    phone: string,
     lastPageIndex: number,
     salesRepEmail: string,
   ) {
@@ -352,10 +353,13 @@ ${project.sales_rep.phone}`
           {
             recipient_name: name,
             recipient_email: email,
+            recipient_phonenumber: phone,
+            recipient_countrycode_iso: 'US',
             in_person_name: name,
             action_type: 'SIGN',
             signing_order: 0,
             verify_recipient: false,
+            delivery_mode: 'EMAIL_SMS',
             fields: [
               {
                 field_name: 'Signature',
