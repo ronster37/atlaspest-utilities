@@ -66,6 +66,10 @@ interface ZohoSignWebhookPayload {
   notifications: ZohoSignNotification
 }
 
+interface ZohoSignRemindPayload {
+  dealId: string
+}
+
 interface ZohoSignRequest {
   request_status: string
   document_ids: ZohoSignDocumentId[]
