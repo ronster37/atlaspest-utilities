@@ -282,7 +282,7 @@ ${project.sales_rep.phone}`
         request_name: `Atlas Pest Services Proposal for ${zohoDeal.Deal_Name}`,
         notes,
         expiration_days: this.configService.get('ZOHO_SIGN_EXPIRATION_DAYS'),
-        email_reminders: true,
+        email_reminders: false,
         reminder_period: this.configService.get('ZOHO_SIGN_REMINDER_PERIOD'),
       },
     }
@@ -424,6 +424,17 @@ ${project.sales_rep.phone}`
     const url = `${this.configService.get(
       'ZOHO_SIGN_URL',
     )}/requests/${request_id}/submit`
+
+    const zohoAxiosInstance =
+      this.salesRepZohoAxiosInstances[salesRepEmail] || this.zohoAxiosInstance
+
+    return zohoAxiosInstance.post(url, null)
+  }
+
+  remind(request_id: string, salesRepEmail: string) {
+    const url = `${this.configService.get(
+      'ZOHO_SIGN_URL',
+    )}/requests/${request_id}/remind`
 
     const zohoAxiosInstance =
       this.salesRepZohoAxiosInstances[salesRepEmail] || this.zohoAxiosInstance

@@ -49,6 +49,7 @@ interface ZohoRequest {
   document_fields: ZohoDocumentFields[]
   document_ids: ZohoDocumentIds[]
   request_id: string
+  owner_email: string
 }
 
 interface ZohoDocumentFields {

@@ -1,4 +1,12 @@
-import { Body, Controller, Logger, Post, UseGuards } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Get,
+  Logger,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common'
 import { AppService } from './app.service'
 import axios, { AxiosError } from 'axios'
 import { ZohoGuard } from './auth/zoho.guard'
@@ -262,5 +270,20 @@ Additional Service Information: ${proposalDetails.additionalServiceInformation}
 Please set up subscription.
 `,
     })
+  }
+
+  @UseGuards(ZohoGuard)
+  @Get('/zoho-sign/:dealId/remind')
+  async webhookZohoRequestReminder(@Param('dealId') dealId: string) {
+    this.logger.log(`incoming ${this.webhookZohoRequestReminder.name}`)
+    const { zohoSignRequestId } =
+      await this.prisma.commercialSales.findFirstOrThrow({
+        where: {
+          zohoDealId: dealId,
+        },
+      })
+    const request = await this.appService.getZohoRequest(zohoSignRequestId)
+
+    await this.appService.remind(zohoSignRequestId, request.owner_email)
   }
 }
