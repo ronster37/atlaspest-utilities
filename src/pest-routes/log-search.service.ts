@@ -5,6 +5,7 @@ import { PestRoutesService } from 'src/pestRoutes.service'
 import { PrismaService } from 'src/prisma.service'
 import * as Sentry from '@sentry/node'
 import { GreetManagerService } from './greet-manager.service'
+import { ConfigService } from '@nestjs/config'
 
 const PESTROUTES_LAST_CHANGELOG_ID_SEEN = 'PESTROUTES_LAST_CHANGELOG_ID_SEEN'
 // 4 is the classId for Appointment models in PestRoutes
@@ -18,6 +19,7 @@ export class ChangelogSearchService {
     private pestRoutesService: PestRoutesService,
     private readonly prisma: PrismaService,
     private greetManagerService: GreetManagerService,
+    private configService: ConfigService,
   ) {}
 
   // Every 15 minutes between 2 AM and 5 PM, Monday through Friday
@@ -25,6 +27,10 @@ export class ChangelogSearchService {
     timeZone: 'America/Denver',
   })
   async searchChangelog() {
+    if (this.configService.get('NODE_ENV') !== 'production') {
+      return
+    }
+
     const now = DateTime.now().setZone('America/Denver')
 
     if (now.hour == 2 && now.minute < 15) {

@@ -420,10 +420,10 @@ ${project.sales_rep.phone}`
     })
   }
 
-  sendForSignature(request_id: string, salesRepEmail: string) {
+  sendForSignature(requestId: string, salesRepEmail: string) {
     const url = `${this.configService.get(
       'ZOHO_SIGN_URL',
-    )}/requests/${request_id}/submit`
+    )}/requests/${requestId}/submit`
 
     const zohoAxiosInstance =
       this.salesRepZohoAxiosInstances[salesRepEmail] || this.zohoAxiosInstance
@@ -431,10 +431,10 @@ ${project.sales_rep.phone}`
     return zohoAxiosInstance.post(url, null)
   }
 
-  remind(request_id: string, salesRepEmail: string) {
+  remind(requestId: string, salesRepEmail: string) {
     const url = `${this.configService.get(
       'ZOHO_SIGN_URL',
-    )}/requests/${request_id}/remind`
+    )}/requests/${requestId}/remind`
 
     const zohoAxiosInstance =
       this.salesRepZohoAxiosInstances[salesRepEmail] || this.zohoAxiosInstance

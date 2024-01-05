@@ -41,8 +41,10 @@ export class BonjoroService {
     timeZone: 'America/Denver',
   })
   async nightlyJob() {
-    await this.deleteOpenGreets()
-    await this.createGreets()
+    if (this.configService.get('NODE_ENV') === 'production') {
+      await this.deleteOpenGreets()
+      await this.createGreets()
+    }
   }
 
   async deleteOpenGreets() {

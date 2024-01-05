@@ -31,7 +31,10 @@ export class PestRoutesController {
     const { appointment } = await this.pestRoutesService.getAppointmentById(id)
     const { date } = appointment
 
+    // For testing
+    // if (currentDate == date) {
     if (currentDate == date && dt.hour >= 2 && dt.minute > 0) {
+      this.logger.log(`Creating new greet for appointment ${id}`)
       const { customer } = await this.pestRoutesService.getCustomerById(
         appointment.customerID,
       )
