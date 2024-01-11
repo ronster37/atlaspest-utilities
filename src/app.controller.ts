@@ -156,7 +156,9 @@ export class AppController {
 
   @Post('zoho/document-signed')
   async webhookZohoDocumentSigned(@Body() body: ZohoSignWebhookPayload) {
-    this.logger.log('incoming webhookZohoDocumentSigned ' + body)
+    this.logger.log(
+      'incoming webhookZohoDocumentSigned ' + JSON.stringify(body),
+    )
     const operationType = body.notifications.operation_type
     const requestId = String(body.requests.request_id)
 
