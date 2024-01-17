@@ -26,7 +26,7 @@ export class BonjoroController {
       const { customer } = await this.pestRoutesService.getCustomerById(
         pestRoutesCustomerId,
       )
-      let textTemplate = await this.frontService.getTemplate()
+      let textTemplate = await this.frontService.getTemplate('rsp_mtjrm')
 
       textTemplate = textTemplate
         .replace(/<[^>]*>/g, '')
@@ -34,7 +34,11 @@ export class BonjoroController {
         .replace('{{customer.first_name}}', `${customer.fname}`)
         .replace('{{link}}', videoUrl)
 
-      await this.frontService.sendMessage(customer.phone1, textTemplate)
+      await this.frontService.sendSMS({
+        to: customer.phone1,
+        body: textTemplate,
+        channelId: 'cha_ap76a',
+      })
     }
   }
 }

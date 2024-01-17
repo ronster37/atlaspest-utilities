@@ -1,4 +1,4 @@
-import { Controller, Get, Logger, Param } from '@nestjs/common'
+import { Controller, Get, Logger, Param, Query } from '@nestjs/common'
 import { BonjoroService } from '../bonjoro/bonjoro.service'
 import { ConfigService } from '@nestjs/config'
 import { PestRoutesService } from 'src/pestRoutes.service'
@@ -7,6 +7,8 @@ import { GreetManagerService } from './greet-manager.service'
 import { AppService } from 'src/app.service'
 import { PrismaService } from 'src/prisma.service'
 import { EmailService } from 'src/email.service'
+import { FrontService } from 'src/front/front.service'
+import * as Handlebars from 'handlebars'
 
 @Controller('pest-routes')
 export class PestRoutesController {
@@ -20,6 +22,7 @@ export class PestRoutesController {
     private appService: AppService,
     private prisma: PrismaService,
     private readonly emailService: EmailService,
+    private frontService: FrontService,
   ) {}
 
   @Get('/appointments/:id/scheduled')
@@ -130,6 +133,58 @@ export class PestRoutesController {
           break
         }
       }
+    }
+  }
+
+  @Get('reminders/:id/appointments')
+  async appointmentReminder(
+    @Param('id') id: number,
+    @Query('method') method: 'email' | 'sms',
+  ) {
+    const { appointment } = await this.pestRoutesService.getAppointmentById(
+      18136,
+    )
+    const { customer } = await this.pestRoutesService.getCustomerById(
+      appointment.customerID,
+    )
+    const { subscription } = await this.pestRoutesService.getSubscriptionById(
+      appointment.subscriptionID,
+    )
+    const serviceType = subscription.serviceType
+    const serviceAddress = `${customer.address} ${customer.city}, ${customer.state} ${customer.zip}`
+    const serviceDate = DateTime.fromISO(appointment.date).toFormat('MMMM d')
+
+    if (method === 'email') {
+      const templateStr = await this.frontService.getTemplate('rsp_mwfyq')
+      const template = Handlebars.compile(templateStr)
+
+      await this.frontService.sendEmail({
+        to: customer.email,
+        subject: `Appointment Reminder: ${serviceDate}`,
+        body: template({
+          accountNumber: appointment.customerID,
+          serviceDate,
+          ServiceType: serviceType,
+          serviceAddress,
+        }),
+        channelId: 'cha_9rc0i',
+      })
+    } else if (method === 'sms') {
+      const templateStr = await this.frontService.getTemplate('rsp_ot0k2')
+      const template = Handlebars.compile(templateStr)
+
+      await this.frontService.sendSMS({
+        to: customer.phone1,
+        body: template({
+          firstName: customer.fname,
+          serviceDate,
+          ServiceType: serviceType,
+          serviceAddress,
+        }),
+        channelId: 'cha_ap76a',
+      })
+    } else {
+      this.logger.error(`Method '${method}' not recognized.`)
     }
   }
 }

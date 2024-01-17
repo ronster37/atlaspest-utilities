@@ -6,7 +6,7 @@ import axios, { AxiosInstance } from 'axios'
 export class FrontService {
   private frontAxiosInstance: AxiosInstance
 
-  constructor(private configService: ConfigService) {
+  constructor(configService: ConfigService) {
     this.frontAxiosInstance = axios.create({
       baseURL: configService.get<string>('FRONT_API_URL'),
       headers: {
@@ -19,10 +19,7 @@ export class FrontService {
     })
   }
 
-  async getTemplate() {
-    const messageTemplateId = this.configService.get<string>(
-      'FRONT_MESSAGE_TEMPLATE_ID',
-    )
+  async getTemplate(messageTemplateId: string) {
     const response =
       await this.frontAxiosInstance.get<GetFrontTemplateResponse>(
         `/message_templates/${messageTemplateId}`,
@@ -31,13 +28,26 @@ export class FrontService {
     return response.data.body
   }
 
-  sendMessage(to: string, body: string) {
-    const channelId = this.configService.get<string>('FRONT_CHANNEL_ID')
+  sendSMS(data: FrontSendSMS) {
+    const { to, body, channelId } = data
     return this.frontAxiosInstance.post(`/channels/${channelId}/messages`, {
       to: [to],
       options: {
         archive: true,
       },
+      body,
+    })
+  }
+
+  sendEmail(data: FrontSendEmail) {
+    const { to, subject, body, channelId } = data
+    return this.frontAxiosInstance.post(`/channels/${channelId}/messages`, {
+      to: [to],
+      sender_name: 'Atlas Pest',
+      options: {
+        archive: true,
+      },
+      subject,
       body,
     })
   }

@@ -14,12 +14,19 @@ interface PestRoutesGetAppointmentResponse {
     date: string
     employeeID: string
     routeID: string
+    subscriptionID: string
   }
 }
 
 interface PestRoutesGetRouteResponse {
   route: {
     assignedTech: string
+  }
+}
+
+interface PestRoutesGetSubscriptionResponse {
+  subscription: {
+    serviceType: string
   }
 }
 

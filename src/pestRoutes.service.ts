@@ -332,6 +332,15 @@ export class PestRoutesService {
     return result.data
   }
 
+  async getSubscriptionById(id: string) {
+    const result =
+      await this.pestRoutesAxiosInstance.get<PestRoutesGetSubscriptionResponse>(
+        `/subscription/${id}`,
+      )
+
+    return result.data
+  }
+
   async getEmployeeById(id: string) {
     const result =
       await this.pestRoutesAxiosInstance.get<PestRoutesGetEmployeeResponse>(
