@@ -128,7 +128,7 @@ export class PestRoutesController {
 
         if (zohoDeal.Stage === 'Sold') {
           await this.appService.updateZohoDeal(zohoDeal.id, {
-            Stage: 'Sold-Serviced',
+            Stage: 'Sold - Serviced',
           })
           break
         }
