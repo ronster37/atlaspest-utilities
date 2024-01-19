@@ -26,7 +26,9 @@ export class BonjoroController {
       const { customer } = await this.pestRoutesService.getCustomerById(
         pestRoutesCustomerId,
       )
-      let textTemplate = await this.frontService.getTemplate('rsp_mtjrm')
+      let { body: textTemplate } = await this.frontService.getTemplate(
+        'rsp_mtjrm',
+      )
 
       textTemplate = textTemplate
         .replace(/<[^>]*>/g, '')

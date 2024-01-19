@@ -48,6 +48,7 @@ interface PestRoutesGetCustomerResponse {
     city: string
     state: string
     zip: string
+    billingFName: string
   }
 }
 
@@ -65,4 +66,28 @@ interface PestRoutesGetSingleChangelogResponse {
     notes: string // JSON format
     referenceID: string // appointment id
   }
+}
+
+interface PestRoutesRemindersBody {
+  type: 'bed_bug' | 'billing' | 'appointment'
+  method: 'sms' | 'email'
+}
+
+interface PestRoutesRemindersAppointmentBody extends PestRoutesRemindersBody {
+  customerId: string
+  customerNumber: string
+  loginLink: string
+  serviceDate: string
+  serviceDescription: string
+}
+
+interface PestRoutesRemindersBillingBody extends PestRoutesRemindersBody {
+  customerId: string
+  responsibleBalance: number
+  daysPastDue: number
+  loginLink: string
+}
+
+interface PestRoutesRemindersBedBugBody extends PestRoutesRemindersBody {
+  customerId: string
 }

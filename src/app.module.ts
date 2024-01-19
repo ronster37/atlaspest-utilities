@@ -16,6 +16,7 @@ import { BonjoroController } from './bonjoro/bonjoro.controller'
 import { FrontService } from './front/front.service'
 import { GreetManagerService } from './pest-routes/greet-manager.service'
 import { ChangelogSearchService } from './pest-routes/log-search.service'
+import { PestRoutesRemindersService } from './pest-routes/pest-routes-reminders.service'
 
 @Module({
   imports: [ConfigModule.forRoot(), AuthModule, ScheduleModule.forRoot()],
@@ -34,6 +35,7 @@ import { ChangelogSearchService } from './pest-routes/log-search.service'
     FrontService,
     GreetManagerService,
     ChangelogSearchService,
+    PestRoutesRemindersService,
   ],
 })
 export class AppModule {}
