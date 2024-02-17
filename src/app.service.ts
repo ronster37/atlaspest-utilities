@@ -191,7 +191,7 @@ export class AppService {
         sales_rep: {
           name: `${body.salesRep.firstName} ${body.salesRep.lastName}`,
           email: body.salesRep.email,
-          phone: body.salesRep.phone,
+          phone: body.salesRep.phone || '',
         },
       },
       {
@@ -261,13 +261,13 @@ export class AppService {
   }
 
   async createZohoDocument(
-    zohoContact: ZohoContact,
-    zohoDeal: ZohoDeal,
+    firstName: string,
+    dealName: string,
     project: ArcSiteProject,
     pdfUrl: string,
   ) {
     const url = `${this.configService.get('ZOHO_SIGN_URL')}/requests`
-    const notes = `Hey ${zohoContact.First_Name}!
+    const notes = `Hey ${firstName}!
 
 It was great meeting with you today. Thank you again for your time and the opportunity to take care of any pest problems here.
 Our primary focus is to earn each of our customer's trust by providing the best quality service with a hassle-free and convenient experience. We are really looking forward to earning your business as well.
@@ -279,7 +279,7 @@ ${project.sales_rep.phone}`
 
     const requestData = {
       requests: {
-        request_name: `Atlas Pest Services Proposal for ${zohoDeal.Deal_Name}`,
+        request_name: `Atlas Pest Services Proposal for ${dealName}`,
         notes,
         expiration_days: this.configService.get('ZOHO_SIGN_EXPIRATION_DAYS'),
         email_reminders: false,

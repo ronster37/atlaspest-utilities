@@ -88,6 +88,11 @@ export class AppController {
       return
     }
 
+    if (commercialSale.pipedriveDealId) {
+      this.logger.log(`Pipedrive Deal Id found. Skipping arcsite webhook.`)
+      return
+    }
+
     const { zohoContactId, zohoDealId } = commercialSale
     const contact = await this.appService.getZohoContact(zohoContactId)
     const deal = await this.appService.getZohoDeal(zohoDealId)
@@ -95,8 +100,8 @@ export class AppController {
     const salesRepEmail = project.sales_rep.email.toLowerCase()
 
     const requestDocument = await this.appService.createZohoDocument(
-      contact,
-      deal,
+      contact.First_Name,
+      deal.Deal_Name,
       project,
       url,
     )
@@ -104,7 +109,7 @@ export class AppController {
     // TODO: Check if a document already exists for this lead and project
     // If so, then do not create a new document and print error
     await this.prisma.commercialSales.update({
-      where: { zohoDealId: zohoDealId, arcSiteProjectId: project_id },
+      where: { zohoDealId, arcSiteProjectId: project_id },
       data: {
         zohoSignRequestId: requestDocument.request_id,
       },

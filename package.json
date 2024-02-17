@@ -36,6 +36,7 @@
     "nodemailer": "^6.9.4",
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^1.1.1",
+    "pipedrive": "^22.5.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1"
   },

@@ -17,6 +17,7 @@ model CommercialSales {
   updatedAt            DateTime @updatedAt @map("updated_at")
   zohoDealId           String?  @map("zoho_deal_id")
   zohoContactId        String?  @map("zoho_contact_id")
+  pipedriveDealId      String?  @map("pipedrive_deal_id")
   arcSiteProjectId     String   @unique @map("arc_site_project_id")
   zohoSignRequestId    String?  @unique @map("zoho_sign_document_request_id")
   pestRoutesCustomerId Int?     @unique @map("pest_routes_customer_id")
