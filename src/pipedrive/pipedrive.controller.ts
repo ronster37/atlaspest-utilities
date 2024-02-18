@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Logger, Post } from '@nestjs/common'
+import { Body, Controller, Logger, Post } from '@nestjs/common'
 import { PipedriveService } from './pipedrive.service'
 import { AppService } from 'src/app.service'
 import { EmailService } from 'src/email.service'
@@ -13,11 +13,15 @@ import {
   CONTRACT_VALUE_KEY,
   FREQUENCY_KEY,
   INITIAL_PRICE_KEY,
+  IS_THIS_AN_UPSELL_KEY,
   MULTI_UNIT_PROPERTY_KEY,
+  PEST_ROUTES_ID_KEY,
   PROPOSAL_DATE_KEY,
   RECURRING_PRICE_KEY,
   SERVICE_INFORMATION_KEY,
   SERVICE_TYPE_KEY,
+  STAGE_PROPOSAL_SENT,
+  STAGE_SOLD,
   STATE_KEY,
   UNIT_QUOTA_KEY,
   ZIP_KEY,
@@ -35,31 +39,6 @@ export class PipedriveController {
     private readonly pipedriveService: PipedriveService,
     private readonly pestRouteService: PestRoutesService,
   ) {}
-
-  @Get('test')
-  test() {
-    this.pipedriveService.updateDeal(15, {
-      [INITIAL_PRICE_KEY]: '15.01',
-    })
-    // return this.pipedriveService.getPerson(4)
-    // const opts = pipedrive.UpdateDealRequest.constructFromObject({
-    //   '8f815bd5b858e3fd84fa5b6751a7249aa69e489c': '100',
-    //   '220f3abc921170b7c7e189fb15bbc30852cb7bda': '54',
-    //   '6b2fb6c2b6e83d8d170c12a3d8ee2e9788689b03': DateTime.local()
-    //     .setZone('America/Denver')
-    //     .toFormat('yyyy-MM-dd'),
-    //   f0bb0ff690b79053b45ef21ee9e0205356f6afac: `We will treat up to 10 units per service, we will do all basic insects including hornets and wasps at our
-    //     regular price including cockroaches and crawling insects.
-    //     Bed bugs are a separate charge.
-    //     We will treat the clubhouse at each service and de web it to help maintain high visual standards and
-    //     eliminate spider activity.
-    //     If services need to be more than monthly we can do weekly and every other week so we can be efficient
-    //     and cost productive for the complex.
-    //     If there aren’t 10 units to do we will treat the exterior of buildings.`,
-    //   stageId: 3,
-    // })
-    // this.pipedriveService.dealsApi.updateDeal(4, opts)
-  }
 
   @Post('appointment-scheduled')
   async wehookAppointmentScheduled(
@@ -185,6 +164,12 @@ export class PipedriveController {
       project,
       url,
     )
+    await this.pipedriveService.uploadFileToDealWithURL(
+      deal.id,
+      url,
+      'missing_customer_signature',
+    )
+
     // TODO: Check if a document already exists for this lead and project
     // If so, then do not create a new document and print error
     await this.prisma.commercialSales.update({
@@ -216,7 +201,7 @@ export class PipedriveController {
 
     // Update the stage before the pdf parsing
     await this.pipedriveService.updateDeal(deal.id, {
-      stage_id: 2,
+      stage_id: STAGE_PROPOSAL_SENT,
     })
 
     const proposalDetails = await this.pestRouteService.getProposalDetails(
@@ -237,6 +222,132 @@ export class PipedriveController {
       [PROPOSAL_DATE_KEY]: DateTime.local()
         .setZone('America/Denver')
         .toFormat('yyyy-MM-dd'),
+    })
+  }
+
+  @Post('/document-signed')
+  async webhookDocumentSigned(@Body() body: ZohoSignWebhookPayload) {
+    this.logger.log(
+      'incoming webhookDocumentSigned (pipedrive) ' + JSON.stringify(body),
+    )
+    const operationType = body.notifications.operation_type
+    const requestId = String(body.requests.request_id)
+
+    if (operationType != 'RequestCompleted') {
+      this.logger.log('Invalid notification_type ' + operationType)
+      return
+    }
+
+    const { id, arcSiteProjectId, pipedriveDealId } =
+      await this.prisma.commercialSales.findFirstOrThrow({
+        where: {
+          zohoSignRequestId: requestId,
+        },
+      })
+
+    if (!pipedriveDealId) {
+      this.logger.log(
+        `No Pipedrive Deal Id found. Skipping document signed webhook.`,
+      )
+      return
+    }
+
+    const deal = await this.pipedriveService.getDeal(pipedriveDealId)
+    const person = await this.pipedriveService.getPerson(deal.person_id.value)
+    const arcSiteProject = await this.appService.getArcSiteProject(
+      arcSiteProjectId,
+    )
+
+    const arrayBuffer = await this.appService.getZohoRequestPDFArrayBuffer(
+      requestId,
+    )
+    let customerId: string
+
+    // If it's an upsell reuse the existing PR customer
+    if (deal[IS_THIS_AN_UPSELL_KEY]) {
+      customerId = deal[PEST_ROUTES_ID_KEY]
+    } else {
+      const pestRouteCustomerCreateResponse =
+        await this.pestRouteService.createCustomer(
+          person.first_name,
+          person.last_name,
+          deal.org_name,
+          arcSiteProject,
+          arrayBuffer,
+        )
+      customerId = pestRouteCustomerCreateResponse.result
+    }
+
+    // Once the customer is created, update the commercial sale with the pestRoutesCustomerId
+    await this.prisma.commercialSales.update({
+      where: { id },
+      data: {
+        pestRoutesCustomerId: Number(customerId),
+      },
+    })
+
+    // Skip this step for upsells
+    if (deal[IS_THIS_AN_UPSELL_KEY]) {
+      await this.pestRouteService.createAdditionalContactIfSecondEmailOrPhoneExists(
+        customerId,
+        person.first_name,
+        person.last_name,
+        arcSiteProject,
+      )
+    }
+
+    await this.pestRouteService.uploadProposal(
+      arrayBuffer,
+      customerId,
+      'Signed Contract',
+      1,
+      0,
+    )
+    await this.pestRouteService.uploadDiagram(
+      arrayBuffer,
+      customerId,
+      'Service Diagram',
+    )
+    await this.pipedriveService.uploadFileToDealWithArrayBuffer(
+      deal.id,
+      arrayBuffer,
+      'signed_contract',
+    )
+
+    const proposalDetails = await this.pestRouteService.getProposalDetails(
+      arrayBuffer,
+    )
+
+    if (proposalDetails.additionalServiceInformation) {
+      let redNote = proposalDetails.additionalServiceInformation
+
+      if (proposalDetails.unitQuotaPerService) {
+        redNote += `\n\nUnit Quota per Service: ${proposalDetails.unitQuotaPerService}`
+      }
+
+      await this.pestRouteService.createRedNote(customerId, redNote)
+    }
+
+    await this.pipedriveService.updateDeal(deal.id, {
+      stage_id: STAGE_SOLD,
+      [PEST_ROUTES_ID_KEY]: customerId,
+    })
+    // TODO: Add requested start date
+    await this.emailService.send({
+      subject: `New signed contract for ${deal.person_name}`,
+      text: `New signed contract for ${deal.person_name}.
+
+    Customer ID: ${customerId}
+    Service Type: ${proposalDetails.serviceType}
+    Initial Price: ${proposalDetails.initialPrice}
+    Recurring Price: ${proposalDetails.recurringPrice}
+    Recurring Frequency: ${proposalDetails.recurringFrequency}
+    Contract Length: ${proposalDetails.contractLength}
+    Unit Quota per Service: ${proposalDetails.unitQuotaPerService}
+    Additional Service Information: ${proposalDetails.additionalServiceInformation}
+
+    Please set up subscription.
+    `,
     })
   }
 }

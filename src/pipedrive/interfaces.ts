@@ -5,7 +5,9 @@ import {
   CONTRACT_VALUE_KEY,
   FREQUENCY_KEY,
   INITIAL_PRICE_KEY,
+  IS_THIS_AN_UPSELL_KEY,
   MULTI_UNIT_PROPERTY_KEY,
+  PEST_ROUTES_ID_KEY,
   PROPOSAL_DATE_KEY,
   RECURRING_PRICE_KEY,
   SERVICE_INFORMATION_KEY,
@@ -62,6 +64,7 @@ export interface PipedriveDeal {
   [CITY_KEY]: string
   [STATE_KEY]: string
   [ZIP_KEY]: string
+  [IS_THIS_AN_UPSELL_KEY]: 'Yes' | 'No' | null
   user_id: {
     id: number
     name: string
@@ -101,4 +104,5 @@ export interface PipedriveDealUpdate {
   [MULTI_UNIT_PROPERTY_KEY]?: 'Yes' | 'No'
   [UNIT_QUOTA_KEY]?: string
   [PROPOSAL_DATE_KEY]?: string
+  [PEST_ROUTES_ID_KEY]?: string
 }

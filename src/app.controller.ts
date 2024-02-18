@@ -172,12 +172,19 @@ export class AppController {
       return
     }
 
-    const { id, arcSiteProjectId, zohoContactId, zohoDealId } =
+    const { id, arcSiteProjectId, zohoContactId, zohoDealId, pipedriveDealId } =
       await this.prisma.commercialSales.findFirstOrThrow({
         where: {
           zohoSignRequestId: requestId,
         },
       })
+
+    if (pipedriveDealId) {
+      this.logger.log(
+        `Pipedrive Deal Id found. Skipping webhookZohoDocumentSigned.`,
+      )
+      return
+    }
 
     const zohoContact = await this.appService.getZohoContact(zohoContactId)
     const zohoDeal = await this.appService.getZohoDeal(zohoDealId)
@@ -196,8 +203,9 @@ export class AppController {
     } else {
       const pestRouteCustomerCreateResponse =
         await this.pestRouteService.createCustomer(
-          zohoContact,
-          zohoDeal,
+          zohoContact.First_Name,
+          zohoContact.Last_Name,
+          zohoDeal.Deal_Name,
           arcSiteProject,
           arrayBuffer,
         )
@@ -216,7 +224,8 @@ export class AppController {
     if (zohoDeal.Is_this_an_upsell) {
       await this.pestRouteService.createAdditionalContactIfSecondEmailOrPhoneExists(
         customerId,
-        zohoContact,
+        zohoContact.First_Name,
+        zohoContact.Last_Name,
         arcSiteProject,
       )
     }

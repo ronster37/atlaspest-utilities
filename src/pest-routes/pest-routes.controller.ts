@@ -8,6 +8,8 @@ import { AppService } from 'src/app.service'
 import { PrismaService } from 'src/prisma.service'
 import { EmailService } from 'src/email.service'
 import { PestRoutesRemindersService } from './pest-routes-reminders.service'
+import { PipedriveService } from 'src/pipedrive/pipedrive.service'
+import { STAGE_SOLD, STAGE_SOLD_SERVICED } from 'src/pipedrive/constants'
 
 @Controller('pest-routes')
 export class PestRoutesController {
@@ -22,6 +24,7 @@ export class PestRoutesController {
     private prisma: PrismaService,
     private emailService: EmailService,
     private pestRoutesRemindersService: PestRoutesRemindersService,
+    private pipedriveService: PipedriveService,
   ) {}
 
   @Get('/appointments/:id/scheduled')
@@ -98,12 +101,22 @@ export class PestRoutesController {
     } else {
       let countSold = 0
       for (const commercialSale of commercialSales) {
-        const zohoDeal = await this.appService.getZohoDeal(
-          commercialSale.zohoDealId,
-        )
+        const { zohoDealId, pipedriveDealId } = commercialSale
 
-        if (zohoDeal.Stage === 'Sold') {
-          countSold++
+        if (zohoDealId) {
+          const zohoDeal = await this.appService.getZohoDeal(zohoDealId)
+
+          if (zohoDeal.Stage === 'Sold') {
+            countSold++
+          }
+        } else if (pipedriveDealId) {
+          const deal = await this.pipedriveService.getDeal(pipedriveDealId)
+
+          if (deal.stage_id == STAGE_SOLD) {
+            countSold++
+          }
+        } else {
+          this.logger.warn('Could not increment coundSold.')
         }
       }
 
@@ -121,15 +134,30 @@ export class PestRoutesController {
       }
 
       for (const commercialSale of commercialSales) {
-        const zohoDeal = await this.appService.getZohoDeal(
-          commercialSale.zohoDealId,
-        )
+        const { zohoDealId, pipedriveDealId } = commercialSale
 
-        if (zohoDeal.Stage === 'Sold') {
-          await this.appService.updateZohoDeal(zohoDeal.id, {
-            Stage: 'Sold - Serviced',
-          })
-          break
+        if (zohoDealId) {
+          const zohoDeal = await this.appService.getZohoDeal(zohoDealId)
+
+          if (zohoDeal.Stage === 'Sold') {
+            await this.appService.updateZohoDeal(zohoDeal.id, {
+              Stage: 'Sold - Serviced',
+            })
+            break
+          }
+        } else if (pipedriveDealId) {
+          const deal = await this.pipedriveService.getDeal(pipedriveDealId)
+
+          if (deal.stage_id == STAGE_SOLD) {
+            await this.pipedriveService.updateDeal(pipedriveDealId, {
+              stage_id: STAGE_SOLD_SERVICED,
+            })
+            break
+          }
+        } else {
+          this.logger.warn(
+            "Did not update any commercial sale to 'sold - serviced'.",
+          )
         }
       }
     }

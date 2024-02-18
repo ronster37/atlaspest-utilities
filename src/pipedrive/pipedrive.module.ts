@@ -17,5 +17,6 @@ import { PestRoutesService } from 'src/pestRoutes.service'
     PestRoutesService,
   ],
   controllers: [PipedriveController],
+  exports: [PipedriveService],
 })
 export class PipedriveModule {}
