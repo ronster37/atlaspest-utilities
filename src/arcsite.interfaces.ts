@@ -1,12 +1,10 @@
 interface ArcSiteProposalSignedPayload {
   event: string
-  data: ArcSiteProposalSignedData
-}
-
-interface ArcSiteProposalSignedData {
-  project_id: string
-  name: string
-  url: string
+  data: {
+    project_id: string
+    name: string
+    url: string
+  }
 }
 
 interface CustomerAddress {
