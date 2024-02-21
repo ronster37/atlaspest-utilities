@@ -264,7 +264,7 @@ export class PipedriveController {
     let customerId: string
 
     // If it's an upsell reuse the existing PR customer
-    if (deal[IS_THIS_AN_UPSELL_KEY]) {
+    if (deal[IS_THIS_AN_UPSELL_KEY] == 'Yes') {
       customerId = deal[PEST_ROUTES_ID_KEY]
     } else {
       const pestRouteCustomerCreateResponse =
@@ -287,7 +287,7 @@ export class PipedriveController {
     })
 
     // Skip this step for upsells
-    if (deal[IS_THIS_AN_UPSELL_KEY]) {
+    if (deal[IS_THIS_AN_UPSELL_KEY] == 'Yes') {
       await this.pestRouteService.createAdditionalContactIfSecondEmailOrPhoneExists(
         customerId,
         person.first_name,
