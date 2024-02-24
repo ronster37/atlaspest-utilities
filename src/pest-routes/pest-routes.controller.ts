@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Logger, Param, Post } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Get,
+  Logger,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common'
 import { BonjoroService } from '../bonjoro/bonjoro.service'
 import { ConfigService } from '@nestjs/config'
 import { PestRoutesService } from 'src/pestRoutes.service'
@@ -10,6 +18,7 @@ import { EmailService } from 'src/email.service'
 import { PestRoutesRemindersService } from './pest-routes-reminders.service'
 import { PipedriveService } from 'src/pipedrive/pipedrive.service'
 import { STAGE_SOLD, STAGE_SOLD_SERVICED } from 'src/pipedrive/constants'
+import { PestRoutesGuard } from 'src/auth/pestroutes.guard'
 
 @Controller('pest-routes')
 export class PestRoutesController {
@@ -27,6 +36,7 @@ export class PestRoutesController {
     private pipedriveService: PipedriveService,
   ) {}
 
+  @UseGuards(PestRoutesGuard)
   @Get('/appointments/:id/scheduled')
   async appointmentScheduled(@Param('id') id: number) {
     this.logger.log(`${this.appointmentScheduled.name} ${id}`)
@@ -73,17 +83,20 @@ export class PestRoutesController {
     }
   }
 
+  @UseGuards(PestRoutesGuard)
   @Get('/appointments/:id/rescheduled')
   async appointmentRescheduled(@Param('id') id: number) {
     await this.greetManagerService.appointmentRescheduled(id)
   }
 
+  @UseGuards(PestRoutesGuard)
   @Get('/appointments/:id/cancelled')
   async appointmentCancelled(@Param('id') id: number) {
     this.logger.log(`${this.appointmentCancelled.name} ${id}`)
     await this.bonjoroService.cancelAppointment(id)
   }
 
+  @UseGuards(PestRoutesGuard)
   @Get('/appointments/:id/completed')
   async appointmentCompleted(@Param('id') id: number) {
     const { appointment } = await this.pestRoutesService.getAppointmentById(id)
@@ -163,6 +176,7 @@ export class PestRoutesController {
     }
   }
 
+  @UseGuards(PestRoutesGuard)
   @Post('reminders')
   async billingReminder(
     @Body()

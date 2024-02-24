@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config'
 export class BasicAuthGuard implements CanActivate {
   constructor(private configService: ConfigService) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest()
     const authHeader = request.headers.authorization
 
