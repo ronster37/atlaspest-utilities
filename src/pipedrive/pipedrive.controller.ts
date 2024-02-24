@@ -1,4 +1,4 @@
-import { Body, Controller, Logger, Post } from '@nestjs/common'
+import { Body, Controller, Logger, Post, UseGuards } from '@nestjs/common'
 import { PipedriveService } from './pipedrive.service'
 import { AppService } from 'src/app.service'
 import { EmailService } from 'src/email.service'
@@ -27,6 +27,7 @@ import {
   ZIP_KEY,
 } from './constants'
 import { PipedriveWebhookDealAddedBody } from './interfaces'
+import { BasicAuthGuard } from 'src/auth/basic-auth.guard'
 
 @Controller('pipedrive')
 export class PipedriveController {
@@ -40,6 +41,7 @@ export class PipedriveController {
     private readonly pestRouteService: PestRoutesService,
   ) {}
 
+  @UseGuards(BasicAuthGuard)
   @Post('appointment-scheduled')
   async wehookAppointmentScheduled(
     @Body() body: PipedriveWebhookDealAddedBody,
