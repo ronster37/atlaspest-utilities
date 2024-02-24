@@ -17,9 +17,15 @@ import { FrontService } from './front/front.service'
 import { GreetManagerService } from './pest-routes/greet-manager.service'
 import { ChangelogSearchService } from './pest-routes/log-search.service'
 import { PestRoutesRemindersService } from './pest-routes/pest-routes-reminders.service'
+import { PipedriveModule } from './pipedrive/pipedrive.module'
 
 @Module({
-  imports: [ConfigModule.forRoot(), AuthModule, ScheduleModule.forRoot()],
+  imports: [
+    ConfigModule.forRoot(),
+    AuthModule,
+    ScheduleModule.forRoot(),
+    PipedriveModule,
+  ],
   controllers: [AppController, PestRoutesController, BonjoroController],
   providers: [
     AppService,

@@ -56,8 +56,9 @@ export class PestRoutesService {
   }
 
   async createCustomer(
-    zohoContact: ZohoContact,
-    zohoDeal: ZohoDeal,
+    firstName: string,
+    lastName: string,
+    dealName: string,
     arcSiteProject: ArcSiteProject,
     arrayBuffer: Buffer,
   ) {
@@ -66,8 +67,8 @@ export class PestRoutesService {
     const pdfText = result.text
     const isMultiUnit = await this.isMultiUnit(pdfText)
     const requestData = {
-      fname: zohoContact.First_Name,
-      lname: zohoContact.Last_Name,
+      fname: firstName,
+      lname: lastName,
       address: arcSiteProject.work_site_address.street,
       city: arcSiteProject.work_site_address.city,
       state: arcSiteProject.work_site_address.state,
@@ -77,7 +78,7 @@ export class PestRoutesService {
       email: arcSiteProject.customer.email,
       smsReminders: 1,
       emailReminders: 1,
-      companyName: zohoDeal.Deal_Name,
+      companyName: dealName,
       // This sets the customer as a commercial property
       commercialAccount: 1,
       // This sets the customer as a commercial customer
@@ -259,7 +260,8 @@ export class PestRoutesService {
 
   async createAdditionalContactIfSecondEmailOrPhoneExists(
     customerId: string,
-    zohoContact: ZohoContact,
+    firstName: string,
+    lastName: string,
     arcSiteProject: ArcSiteProject,
   ) {
     const { second_email, second_phone } = arcSiteProject.customer
@@ -269,8 +271,8 @@ export class PestRoutesService {
     const requestData = {
       customerID: customerId,
       additionalContactTypeID: 2,
-      fname: zohoContact.First_Name,
-      lname: zohoContact.Last_Name,
+      fname: firstName,
+      lname: lastName,
       phone: second_phone || '',
       email: second_email || '',
       smsReminders: 1,
