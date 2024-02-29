@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Logger, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Logger, Post, UseGuards } from '@nestjs/common'
 import { AppService } from './app.service'
 import axios, { AxiosError } from 'axios'
 import { ZohoGuard } from './auth/zoho.guard'
@@ -6,6 +6,7 @@ import { PestRoutesService } from './pestRoutes.service'
 import { PrismaService } from './prisma.service'
 import { EmailService } from './email.service'
 import { DateTime } from 'luxon'
+import * as Sentry from '@sentry/node'
 
 @Controller()
 export class AppController {
@@ -137,26 +138,36 @@ export class AppController {
       Stage: 'Proposal Sent',
     })
 
-    const proposalDetails = await this.pestRouteService.getProposalDetails(
-      arrayBuffer,
-    )
-
-    this.logger.log('proposalDetails ' + JSON.stringify(proposalDetails))
-    await this.appService.updateZohoDeal(deal.id, {
-      Service_Type: proposalDetails.serviceType,
-      Initial_Price: proposalDetails.initialPrice,
-      Contract_Length: proposalDetails.contractLength,
-      Additional_Service_Information:
-        proposalDetails.additionalServiceInformation,
-      Annual_Contract_Value: proposalDetails.annualContractValue,
-      Recurring_Price: proposalDetails.recurringPrice,
-      Recurring_Frequency: proposalDetails.recurringFrequency,
-      Multi_Unit_Property: proposalDetails.isMultiUnit,
-      Unit_Quota_per_Service: proposalDetails.unitQuotaPerService,
-      Date_Proposal_Sent: DateTime.local()
-        .setZone('America/Denver')
-        .toFormat('yyyy-MM-dd'),
-    })
+    try {
+      const proposalDetails = await this.pestRouteService.getProposalDetails(
+        arrayBuffer,
+      )
+      this.logger.log('proposalDetails ' + JSON.stringify(proposalDetails))
+      await this.appService.updateZohoDeal(deal.id, {
+        Service_Type: proposalDetails.serviceType,
+        Initial_Price: proposalDetails.initialPrice,
+        Contract_Length: proposalDetails.contractLength,
+        Additional_Service_Information:
+          proposalDetails.additionalServiceInformation,
+        Annual_Contract_Value: proposalDetails.annualContractValue,
+        Recurring_Price: proposalDetails.recurringPrice,
+        Recurring_Frequency: proposalDetails.recurringFrequency,
+        Multi_Unit_Property: proposalDetails.isMultiUnit,
+        Unit_Quota_per_Service: proposalDetails.unitQuotaPerService,
+        Date_Proposal_Sent: DateTime.local()
+          .setZone('America/Denver')
+          .toFormat('yyyy-MM-dd'),
+      })
+    } catch (exception) {
+      Sentry.captureException(exception)
+      await this.emailService.send({
+        to: salesRepEmail,
+        subject: `Error parsing proposal details @ ${new Date().toISOString()}`,
+        text:
+          `Could not parse proposal details for ZohoSignDocument ${requestDocument.request_id}. ` +
+          `You will need to input the proposal details manually for ZohoDeal ${zohoDealId}.`,
+      })
+    }
   }
 
   @Post('zoho/document-signed')
@@ -243,40 +254,58 @@ export class AppController {
       'Service Diagram',
     )
 
-    const proposalDetails = await this.pestRouteService.getProposalDetails(
-      arrayBuffer,
-    )
+    try {
+      const proposalDetails = await this.pestRouteService.getProposalDetails(
+        arrayBuffer,
+      )
 
-    if (proposalDetails.additionalServiceInformation) {
-      let redNote = proposalDetails.additionalServiceInformation
+      if (proposalDetails.additionalServiceInformation) {
+        let redNote = proposalDetails.additionalServiceInformation
 
-      if (proposalDetails.unitQuotaPerService) {
-        redNote += `\n\nUnit Quota per Service: ${proposalDetails.unitQuotaPerService}`
+        if (proposalDetails.unitQuotaPerService) {
+          redNote += `\n\nUnit Quota per Service: ${proposalDetails.unitQuotaPerService}`
+        }
+
+        await this.pestRouteService.createRedNote(customerId, redNote)
       }
 
-      await this.pestRouteService.createRedNote(customerId, redNote)
+      // TODO: Add requested start date
+      await this.emailService.send({
+        subject: `New signed contract for ${zohoContact.Full_Name}`,
+        text: `New signed contract for ${zohoContact.Full_Name}.
+  
+  Customer ID: ${customerId}
+  Service Type: ${proposalDetails.serviceType}
+  Initial Price: ${proposalDetails.initialPrice}
+  Recurring Price: ${proposalDetails.recurringPrice}
+  Recurring Frequency: ${proposalDetails.recurringFrequency}
+  Contract Length: ${proposalDetails.contractLength}
+  Unit Quota per Service: ${proposalDetails.unitQuotaPerService}
+  Additional Service Information: ${proposalDetails.additionalServiceInformation}
+  
+  Please set up subscription.
+  `,
+      })
+    } catch (exception) {
+      Sentry.captureException(exception)
+
+      await this.emailService.send({
+        subject: `New signed contract for ${zohoContact.Full_Name}`,
+        text: `New signed contract for ${zohoContact.Full_Name}.
+
+  Customer ID: ${customerId}
+
+  Could not parse proposal details for ZohoSignDocument ${requestId}.
+  You will need to input the red notes (additional service info and Unit Quota per Service) manually for PestRoutes customer ${customerId}.
+
+  Please set up subscription.
+  `,
+      })
     }
 
     await this.appService.updateZohoDeal(zohoDealId, {
       Stage: 'Sold',
       Pest_Routes_ID: customerId,
-    })
-    // TODO: Add requested start date
-    await this.emailService.send({
-      subject: `New signed contract for ${zohoContact.Full_Name}`,
-      text: `New signed contract for ${zohoContact.Full_Name}.
-
-Customer ID: ${customerId}
-Service Type: ${proposalDetails.serviceType}
-Initial Price: ${proposalDetails.initialPrice}
-Recurring Price: ${proposalDetails.recurringPrice}
-Recurring Frequency: ${proposalDetails.recurringFrequency}
-Contract Length: ${proposalDetails.contractLength}
-Unit Quota per Service: ${proposalDetails.unitQuotaPerService}
-Additional Service Information: ${proposalDetails.additionalServiceInformation}
-
-Please set up subscription.
-`,
     })
   }
 

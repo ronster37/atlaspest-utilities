@@ -28,6 +28,7 @@ import {
 } from './constants'
 import { PipedriveWebhookDealAddedBody } from './interfaces'
 import { BasicAuthGuard } from 'src/auth/basic-auth.guard'
+import * as Sentry from '@sentry/node'
 
 @Controller('pipedrive')
 export class PipedriveController {
@@ -53,7 +54,7 @@ export class PipedriveController {
     const zohoDealPayload: ZohoDealPayload = {
       dealId: '',
       contactId: '',
-      company: `[Pipedrive Test] ${body.current.org_name}`,
+      company: `[Pipedrive] ${body.current.org_name}`,
       customer: {
         firstName: person.first_name,
         lastName: person.last_name,
@@ -206,25 +207,36 @@ export class PipedriveController {
       stage_id: STAGE_PROPOSAL_SENT,
     })
 
-    const proposalDetails = await this.pestRouteService.getProposalDetails(
-      arrayBuffer,
-    )
+    try {
+      const proposalDetails = await this.pestRouteService.getProposalDetails(
+        arrayBuffer,
+      )
 
-    this.logger.log('proposalDetails ' + JSON.stringify(proposalDetails))
-    await this.pipedriveService.updateDeal(deal.id, {
-      [SERVICE_TYPE_KEY]: proposalDetails.serviceType,
-      [INITIAL_PRICE_KEY]: proposalDetails.initialPrice,
-      [CONTRACT_LENGTH_KEY]: proposalDetails.contractLength,
-      [SERVICE_INFORMATION_KEY]: proposalDetails.additionalServiceInformation,
-      [CONTRACT_VALUE_KEY]: proposalDetails.annualContractValue,
-      [RECURRING_PRICE_KEY]: proposalDetails.recurringPrice,
-      [FREQUENCY_KEY]: proposalDetails.recurringFrequency,
-      [MULTI_UNIT_PROPERTY_KEY]: proposalDetails.isMultiUnit ? 'Yes' : 'No',
-      [UNIT_QUOTA_KEY]: proposalDetails.unitQuotaPerService,
-      [PROPOSAL_DATE_KEY]: DateTime.local()
-        .setZone('America/Denver')
-        .toFormat('yyyy-MM-dd'),
-    })
+      this.logger.log('proposalDetails ' + JSON.stringify(proposalDetails))
+      await this.pipedriveService.updateDeal(deal.id, {
+        [SERVICE_TYPE_KEY]: proposalDetails.serviceType,
+        [INITIAL_PRICE_KEY]: proposalDetails.initialPrice,
+        [CONTRACT_LENGTH_KEY]: proposalDetails.contractLength,
+        [SERVICE_INFORMATION_KEY]: proposalDetails.additionalServiceInformation,
+        [CONTRACT_VALUE_KEY]: proposalDetails.annualContractValue,
+        [RECURRING_PRICE_KEY]: proposalDetails.recurringPrice,
+        [FREQUENCY_KEY]: proposalDetails.recurringFrequency,
+        [MULTI_UNIT_PROPERTY_KEY]: proposalDetails.isMultiUnit ? 'Yes' : 'No',
+        [UNIT_QUOTA_KEY]: proposalDetails.unitQuotaPerService,
+        [PROPOSAL_DATE_KEY]: DateTime.local()
+          .setZone('America/Denver')
+          .toFormat('yyyy-MM-dd'),
+      })
+    } catch (exception) {
+      Sentry.captureException(exception)
+      await this.emailService.send({
+        to: salesRepEmail,
+        subject: `Error parsing proposal details @ ${new Date().toISOString()}`,
+        text:
+          `Could not parse proposal details for ZohoSignDocument ${requestDocument.request_id}. ` +
+          `You will need to input the proposal details manually for PipedriveDeal ${deal.id}.`,
+      })
+    }
   }
 
   @Post('/document-signed')
@@ -316,28 +328,25 @@ export class PipedriveController {
       'signed_contract',
     )
 
-    const proposalDetails = await this.pestRouteService.getProposalDetails(
-      arrayBuffer,
-    )
+    try {
+      const proposalDetails = await this.pestRouteService.getProposalDetails(
+        arrayBuffer,
+      )
 
-    if (proposalDetails.additionalServiceInformation) {
-      let redNote = proposalDetails.additionalServiceInformation
+      if (proposalDetails.additionalServiceInformation) {
+        let redNote = proposalDetails.additionalServiceInformation
 
-      if (proposalDetails.unitQuotaPerService) {
-        redNote += `\n\nUnit Quota per Service: ${proposalDetails.unitQuotaPerService}`
+        if (proposalDetails.unitQuotaPerService) {
+          redNote += `\n\nUnit Quota per Service: ${proposalDetails.unitQuotaPerService}`
+        }
+
+        await this.pestRouteService.createRedNote(customerId, redNote)
       }
 
-      await this.pestRouteService.createRedNote(customerId, redNote)
-    }
-
-    await this.pipedriveService.updateDeal(deal.id, {
-      stage_id: STAGE_SOLD,
-      [PEST_ROUTES_ID_KEY]: customerId,
-    })
-    // TODO: Add requested start date
-    await this.emailService.send({
-      subject: `New signed contract for ${deal.person_name}`,
-      text: `New signed contract for ${deal.person_name}.
+      // TODO: Add requested start date
+      await this.emailService.send({
+        subject: `New signed contract for ${deal.person_name}`,
+        text: `New signed contract for ${deal.person_name}.
 
     Customer ID: ${customerId}
     Service Type: ${proposalDetails.serviceType}
@@ -350,6 +359,27 @@ export class PipedriveController {
 
     Please set up subscription.
     `,
+      })
+    } catch (exception) {
+      Sentry.captureException(exception)
+
+      await this.emailService.send({
+        subject: `New signed contract for ${deal.person_name}`,
+        text: `New signed contract for ${deal.person_name}.
+
+  Customer ID: ${customerId}
+
+  Could not parse proposal details for ZohoSignDocument ${requestId}.
+  You will need to input the red notes (additional service info and Unit Quota per Service) manually for PestRoutes customer ${customerId}.
+
+  Please set up subscription.
+  `,
+      })
+    }
+
+    await this.pipedriveService.updateDeal(deal.id, {
+      stage_id: STAGE_SOLD,
+      [PEST_ROUTES_ID_KEY]: customerId,
     })
   }
 }
