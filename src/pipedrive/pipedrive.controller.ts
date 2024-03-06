@@ -171,7 +171,7 @@ export class PipedriveController {
     await this.pipedriveService.uploadFileToDealWithURL(
       deal.id,
       url,
-      'missing_customer_signature',
+      `${deal.title}_proposal`,
     )
 
     // TODO: Check if a document already exists for this lead and project
