@@ -54,7 +54,7 @@ export class PipedriveController {
     const zohoDealPayload: ZohoDealPayload = {
       dealId: '',
       contactId: '',
-      company: `[Pipedrive] ${body.current.org_name}`,
+      company: `[Pipedrive] ${body.current.title}`,
       customer: {
         firstName: person.first_name,
         lastName: person.last_name,
@@ -163,7 +163,7 @@ export class PipedriveController {
 
     const requestDocument = await this.appService.createZohoDocument(
       deal.person_name.split(' ')[0],
-      deal.org_name,
+      deal.title,
       project,
       url,
     )
@@ -285,7 +285,7 @@ export class PipedriveController {
         await this.pestRouteService.createCustomer(
           person.first_name,
           person.last_name,
-          deal.org_name,
+          deal.title,
           arcSiteProject,
           arrayBuffer,
         )
