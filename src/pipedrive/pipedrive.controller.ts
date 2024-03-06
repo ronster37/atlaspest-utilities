@@ -11,6 +11,7 @@ import {
   CITY_KEY,
   CONTRACT_LENGTH_KEY,
   CONTRACT_VALUE_KEY,
+  DATE_SIGNED_KEY,
   FREQUENCY_KEY,
   INITIAL_PRICE_KEY,
   IS_THIS_AN_UPSELL_KEY,
@@ -377,9 +378,13 @@ export class PipedriveController {
       })
     }
 
+    const dateSigned = DateTime.fromMillis(body.notifications.performed_at, {
+      zone: 'America/Denver',
+    }).toFormat('yyyy-MM-dd')
     await this.pipedriveService.updateDeal(deal.id, {
       stage_id: STAGE_SOLD,
       [PEST_ROUTES_ID_KEY]: customerId,
+      [DATE_SIGNED_KEY]: dateSigned,
     })
   }
 }

@@ -88,6 +88,7 @@ interface ZohoSignAction {
 
 interface ZohoSignNotification {
   performed_by_email: string
+  performed_at: number
   reason: string
   activity: string
   operation_type: string

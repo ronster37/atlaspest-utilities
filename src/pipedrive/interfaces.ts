@@ -3,6 +3,7 @@ import {
   CITY_KEY,
   CONTRACT_LENGTH_KEY,
   CONTRACT_VALUE_KEY,
+  DATE_SIGNED_KEY,
   FREQUENCY_KEY,
   INITIAL_PRICE_KEY,
   IS_THIS_AN_UPSELL_KEY,
@@ -105,4 +106,5 @@ export interface PipedriveDealUpdate {
   [UNIT_QUOTA_KEY]?: string
   [PROPOSAL_DATE_KEY]?: string
   [PEST_ROUTES_ID_KEY]?: string
+  [DATE_SIGNED_KEY]?: string
 }
