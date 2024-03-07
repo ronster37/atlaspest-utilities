@@ -12,6 +12,7 @@ import {
   PROPOSAL_DATE_KEY,
   RECURRING_PRICE_KEY,
   SERVICE_INFORMATION_KEY,
+  SERVICE_START_DATE_KEY,
   SERVICE_TYPE_KEY,
   STATE_KEY,
   UNIT_QUOTA_KEY,
@@ -107,4 +108,5 @@ export interface PipedriveDealUpdate {
   [PROPOSAL_DATE_KEY]?: string
   [PEST_ROUTES_ID_KEY]?: string
   [DATE_SIGNED_KEY]?: string
+  [SERVICE_START_DATE_KEY]?: string
 }

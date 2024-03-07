@@ -50,6 +50,14 @@ interface ZohoRequest {
   document_ids: ZohoDocumentIds[]
   request_id: string
   owner_email: string
+  actions: {
+    fields: [
+      {
+        field_label: string
+        field_value: string
+      },
+    ]
+  }[]
 }
 
 interface ZohoDocumentFields {

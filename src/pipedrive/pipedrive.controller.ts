@@ -20,6 +20,7 @@ import {
   PROPOSAL_DATE_KEY,
   RECURRING_PRICE_KEY,
   SERVICE_INFORMATION_KEY,
+  SERVICE_START_DATE_KEY,
   SERVICE_TYPE_KEY,
   STAGE_PROPOSAL_SENT,
   STAGE_SOLD,
@@ -276,6 +277,7 @@ export class PipedriveController {
     const arrayBuffer = await this.appService.getZohoRequestPDFArrayBuffer(
       requestId,
     )
+    const requestDocument = await this.appService.getZohoRequest(requestId)
     let customerId: string
 
     // If it's an upsell reuse the existing PR customer
@@ -381,10 +383,23 @@ export class PipedriveController {
     const dateSigned = DateTime.fromMillis(body.notifications.performed_at, {
       zone: 'America/Denver',
     }).toFormat('yyyy-MM-dd')
+    const fieldWithServiceStartDate = requestDocument.actions[0].fields.find(
+      (field) => field.field_label == 'Date - 1',
+    )
+    let serviceStartDate = null
+
+    if (fieldWithServiceStartDate) {
+      serviceStartDate = DateTime.fromFormat(
+        fieldWithServiceStartDate.field_value,
+        'MMM dd yyyy',
+      ).toFormat('yyyy-MM-dd')
+    }
+
     await this.pipedriveService.updateDeal(deal.id, {
       stage_id: STAGE_SOLD,
       [PEST_ROUTES_ID_KEY]: customerId,
       [DATE_SIGNED_KEY]: dateSigned,
+      [SERVICE_START_DATE_KEY]: serviceStartDate,
     })
   }
 }
