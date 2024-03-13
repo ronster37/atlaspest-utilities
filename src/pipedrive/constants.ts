@@ -24,7 +24,7 @@ export const UNIT_QUOTA_KEY = 'a31e28a7dcf34149a9bc13d829dd627ebd7756e3'
 export const PROPOSAL_DATE_KEY = 'b2987ca807369a1c4bc159b1cfa0acd5ad04296f'
 
 // Sales Detail Fields
-export const IS_THIS_AN_UPSELL_KEY = '8b3d0e240661ec4e7db9dc938ac26b4198b5bb3e'
+export const IS_THIS_AN_UPSELL_KEY = '8a9a2feb6263c5881a8c093e2b063b862e60c03c'
 export const PEST_ROUTES_ID_KEY = '16e3271f2697f92ae207e2ef64c8d3fcd7130cc6'
 export const DATE_SIGNED_KEY = '7b7de0d22fdc904d983e1bb7ef96279950e3bd60'
 export const SERVICE_START_DATE_KEY = '9fc4d79b1549a8acc8fa3ade34b7e9eef1445acb'

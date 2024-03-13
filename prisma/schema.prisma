@@ -20,6 +20,7 @@ model CommercialSales {
   pipedriveDealId      String?  @map("pipedrive_deal_id")
   arcSiteProjectId     String   @unique @map("arc_site_project_id")
   zohoSignRequestId    String?  @unique @map("zoho_sign_document_request_id")
+  zohoSignRequestIds   String[] @default([]) @map("zoho_sign_document_request_ids")
   pestRoutesCustomerId Int?     @unique @map("pest_routes_customer_id")
 
   @@map("commercial_sales")

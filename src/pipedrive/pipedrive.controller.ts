@@ -183,7 +183,9 @@ export class PipedriveController {
         arcSiteProjectId: project_id,
       },
       data: {
-        zohoSignRequestId: requestDocument.request_id,
+        zohoSignRequestIds: {
+          push: requestDocument.request_id,
+        },
       },
     })
     await this.appService.addFields(
@@ -254,17 +256,32 @@ export class PipedriveController {
       return
     }
 
-    const { id, arcSiteProjectId, pipedriveDealId } =
+    const { id, arcSiteProjectId, pipedriveDealId, zohoSignRequestId } =
       await this.prisma.commercialSales.findFirstOrThrow({
         where: {
-          zohoSignRequestId: requestId,
+          zohoSignRequestIds: {
+            has: requestId,
+          },
         },
       })
 
     if (!pipedriveDealId) {
-      this.logger.log(
+      this.logger.warn(
         `No Pipedrive Deal Id found. Skipping document signed webhook.`,
       )
+      return
+    }
+
+    if (!zohoSignRequestId) {
+      const message =
+        `Incoming signature for Zoho Doc Request with id '${requestId}'. ` +
+        `But, Pipedrive deal with id '${pipedriveDealId}' already has a signed Zoho Doc Request with id '${zohoSignRequestId}'.`
+
+      this.logger.error(message)
+      await this.emailService.send({
+        subject: `Multiple Documents signed for Pipedrive deal with id '${pipedriveDealId}'`,
+        text: message,
+      })
       return
     }
 
