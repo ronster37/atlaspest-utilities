@@ -163,9 +163,16 @@ export class PipedriveController {
     const project = await this.appService.getArcSiteProject(project_id)
     const salesRepEmail = project.sales_rep.email.toLowerCase()
 
+    const numberOfDocs = commercialSale.zohoSignRequestIds.length
+    let dealName = deal.title
+
+    if (numberOfDocs > 0) {
+      dealName += `${numberOfDocs + 1}`
+    }
+
     const requestDocument = await this.appService.createZohoDocument(
       deal.person_name.split(' ')[0],
-      deal.title,
+      dealName,
       project,
       url,
     )
@@ -175,8 +182,6 @@ export class PipedriveController {
       `${deal.title}_proposal`,
     )
 
-    // TODO: Check if a document already exists for this lead and project
-    // If so, then do not create a new document and print error
     await this.prisma.commercialSales.update({
       where: {
         pipedriveDealId: commercialSale.pipedriveDealId,
