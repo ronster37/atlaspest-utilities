@@ -385,6 +385,19 @@ export class PipedriveController {
     Please set up subscription.
     `,
       })
+
+      // Update proposal details with the signed contract
+      await this.pipedriveService.updateDeal(deal.id, {
+        [SERVICE_TYPE_KEY]: proposalDetails.serviceType,
+        [INITIAL_PRICE_KEY]: proposalDetails.initialPrice,
+        [CONTRACT_LENGTH_KEY]: proposalDetails.contractLength,
+        [SERVICE_INFORMATION_KEY]: proposalDetails.additionalServiceInformation,
+        [CONTRACT_VALUE_KEY]: proposalDetails.annualContractValue,
+        [RECURRING_PRICE_KEY]: proposalDetails.recurringPrice,
+        [FREQUENCY_KEY]: proposalDetails.recurringFrequency,
+        [MULTI_UNIT_PROPERTY_KEY]: proposalDetails.isMultiUnit ? 'Yes' : 'No',
+        [UNIT_QUOTA_KEY]: proposalDetails.unitQuotaPerService,
+      })
     } catch (exception) {
       Sentry.captureException(exception)
 

@@ -29,7 +29,7 @@ interface UpdateZohoDealProposalDetails {
   Recurring_Frequency: string
   Multi_Unit_Property: boolean
   Unit_Quota_per_Service: string
-  Date_Proposal_Sent: string
+  Date_Proposal_Sent?: string
 }
 
 @Injectable()

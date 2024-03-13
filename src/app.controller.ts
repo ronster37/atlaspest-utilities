@@ -100,19 +100,26 @@ export class AppController {
     const project = await this.appService.getArcSiteProject(project_id)
     const salesRepEmail = project.sales_rep.email.toLowerCase()
 
+    const numberOfDocs = commercialSale.zohoSignRequestIds.length
+    let dealName = deal.Deal_Name
+
+    if (numberOfDocs > 0) {
+      dealName += `${numberOfDocs + 1}`
+    }
+
     const requestDocument = await this.appService.createZohoDocument(
       contact.First_Name,
-      deal.Deal_Name,
+      dealName,
       project,
       url,
     )
 
-    // TODO: Check if a document already exists for this lead and project
-    // If so, then do not create a new document and print error
     await this.prisma.commercialSales.update({
       where: { zohoDealId, arcSiteProjectId: project_id },
       data: {
-        zohoSignRequestId: requestDocument.request_id,
+        zohoSignRequestIds: {
+          push: requestDocument.request_id,
+        },
       },
     })
     await this.appService.addFields(
@@ -183,19 +190,47 @@ export class AppController {
       return
     }
 
-    const { id, arcSiteProjectId, zohoContactId, zohoDealId, pipedriveDealId } =
-      await this.prisma.commercialSales.findFirstOrThrow({
-        where: {
-          zohoSignRequestId: requestId,
+    const {
+      id,
+      arcSiteProjectId,
+      zohoContactId,
+      zohoDealId,
+      pipedriveDealId,
+      zohoSignRequestId,
+    } = await this.prisma.commercialSales.findFirstOrThrow({
+      where: {
+        zohoSignRequestIds: {
+          has: requestId,
         },
-      })
+      },
+    })
 
     if (pipedriveDealId) {
-      this.logger.log(
+      this.logger.warn(
         `Pipedrive Deal Id found. Skipping webhookZohoDocumentSigned.`,
       )
       return
     }
+
+    if (!zohoSignRequestId) {
+      const message =
+        `Incoming signature for Zoho Doc Request with id '${requestId}'. ` +
+        `But, Zoho deal with id '${zohoDealId}' already has a signed Zoho Doc Request with id '${zohoSignRequestId}'.`
+
+      this.logger.error(message)
+      await this.emailService.send({
+        subject: `Multiple Documents signed for Zoho deal with id '${zohoDealId}'`,
+        text: message,
+      })
+      return
+    }
+
+    await this.prisma.commercialSales.update({
+      where: { id },
+      data: {
+        zohoSignRequestId: requestId,
+      },
+    })
 
     const zohoContact = await this.appService.getZohoContact(zohoContactId)
     const zohoDeal = await this.appService.getZohoDeal(zohoDealId)
@@ -285,6 +320,20 @@ export class AppController {
   
   Please set up subscription.
   `,
+      })
+
+      // Update proposal details with the signed contract
+      await this.appService.updateZohoDeal(zohoDealId, {
+        Service_Type: proposalDetails.serviceType,
+        Initial_Price: proposalDetails.initialPrice,
+        Contract_Length: proposalDetails.contractLength,
+        Additional_Service_Information:
+          proposalDetails.additionalServiceInformation,
+        Annual_Contract_Value: proposalDetails.annualContractValue,
+        Recurring_Price: proposalDetails.recurringPrice,
+        Recurring_Frequency: proposalDetails.recurringFrequency,
+        Multi_Unit_Property: proposalDetails.isMultiUnit,
+        Unit_Quota_per_Service: proposalDetails.unitQuotaPerService,
       })
     } catch (exception) {
       Sentry.captureException(exception)
